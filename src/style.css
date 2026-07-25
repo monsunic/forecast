@@ -36,18 +36,27 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, '
 
 
 /* Controls */
-.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 .controls select{
-    padding:8px 10px;
+    padding:6px 8px;
     border:1px solid #dfeaf7;
     border-radius:8px;
     background:white;
-    min-width:200px;
-    max-width:200px;
+    flex:1 1 0;
+    min-width:0;
+    max-width:150px;
+    width:130px;
+}
+.controls select#parameterSelect,
+.controls select#timeSelect{
+    max-width:220px;
+    width:200px;
+    flex:1.4 1 0;
 }
 
 .timectrl-top {
     width: 100%;
+    flex: 1 0 100%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -153,21 +162,16 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, '
     margin-top: 40px;
 }
 
-.timectrl-top {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin: 12px 0;
-}
-
 .overview-btn {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border: 1px solid #dfeaf7;
     border-radius: 8px;
     background: white;
-    min-width: 200px;
-    max-width: 200px;
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+    white-space: nowrap;
     color: var(--text);
     font: inherit;
     font-weight: 600;
@@ -196,10 +200,12 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, '
 .controls select{
     min-width:100%;
     max-width:100%;
+    width:100%;
 }
 .overview-btn{
     min-width:100%;
     max-width:100%;
+    width:100%;
 }
 .map-container {
     width: 100%;

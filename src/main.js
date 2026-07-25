@@ -556,12 +556,21 @@
         return [placeholder, ...ordered, ...extras];
     }
 
+    const DEFAULT_REGION = 'southeast_asia';
+
     function populateRegionSelect() {
         populate(regionSelect, regionSelectOptions());
         [...regionSelect.options].forEach(opt => {
             const def = regionDefs.find(d => d.id === opt.value);
             if (def) opt.textContent = def.display;
         });
+    }
+
+    function selectDefaultRegion() {
+        const options = [...regionSelect.options].map(o => o.value);
+        if (options.includes(DEFAULT_REGION)) {
+            regionSelect.value = DEFAULT_REGION;
+        }
     }
 
     // overlay elements for static map region picking
@@ -695,6 +704,7 @@
             }
 
             populateRegionSelect();
+            selectDefaultRegion();
 
             regionSelect.onchange = loadForecastTypes;
             forecastSelect.onchange = loadParameters;
@@ -711,6 +721,7 @@
             regionDefs.forEach(d => tmp[d.id] = {});
             CONFIG = { regions: tmp };
             populateRegionSelect();
+            selectDefaultRegion();
             regionSelect.onchange = loadForecastTypes;
             loadForecastTypes();
         });
