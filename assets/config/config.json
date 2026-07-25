@@ -33,7 +33,47 @@
             "F002",
             "F003"
           ],
-          "dataset": "gfswave"
+          "dataset": "gfswave",
+          "cycle": "2026072500"
+        },
+        "Atmosphere": {
+          "parameters": {
+            "sfc_temp": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rh": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "mslp_wind": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rain_rh700": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ]
+          },
+          "models": [
+            "GFS"
+          ],
+          "timestamps": [
+            "F000",
+            "F001",
+            "F002",
+            "F003"
+          ],
+          "dataset": "gfsatmos",
+          "cycle": "2026072500"
         }
       }
     },
@@ -69,7 +109,47 @@
             "F002",
             "F003"
           ],
-          "dataset": "gfswave"
+          "dataset": "gfswave",
+          "cycle": "2026072500"
+        },
+        "Atmosphere": {
+          "parameters": {
+            "sfc_temp": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rh": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "mslp_wind": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rain_rh700": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ]
+          },
+          "models": [
+            "GFS"
+          ],
+          "timestamps": [
+            "F000",
+            "F001",
+            "F002",
+            "F003"
+          ],
+          "dataset": "gfsatmos",
+          "cycle": "2026072500"
         }
       }
     },
@@ -105,7 +185,47 @@
             "F002",
             "F003"
           ],
-          "dataset": "gfswave"
+          "dataset": "gfswave",
+          "cycle": "2026072500"
+        },
+        "Atmosphere": {
+          "parameters": {
+            "sfc_temp": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rh": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "mslp_wind": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rain_rh700": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ]
+          },
+          "models": [
+            "GFS"
+          ],
+          "timestamps": [
+            "F000",
+            "F001",
+            "F002",
+            "F003"
+          ],
+          "dataset": "gfsatmos",
+          "cycle": "2026072500"
         }
       }
     },
@@ -141,7 +261,47 @@
             "F002",
             "F003"
           ],
-          "dataset": "gfswave"
+          "dataset": "gfswave",
+          "cycle": "2026072500"
+        },
+        "Atmosphere": {
+          "parameters": {
+            "sfc_temp": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rh": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "mslp_wind": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rain_rh700": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ]
+          },
+          "models": [
+            "GFS"
+          ],
+          "timestamps": [
+            "F000",
+            "F001",
+            "F002",
+            "F003"
+          ],
+          "dataset": "gfsatmos",
+          "cycle": "2026072500"
         }
       }
     },
@@ -177,7 +337,47 @@
             "F002",
             "F003"
           ],
-          "dataset": "gfswave"
+          "dataset": "gfswave",
+          "cycle": "2026072500"
+        },
+        "Atmosphere": {
+          "parameters": {
+            "sfc_temp": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rh": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "mslp_wind": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rain_rh700": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ]
+          },
+          "models": [
+            "GFS"
+          ],
+          "timestamps": [
+            "F000",
+            "F001",
+            "F002",
+            "F003"
+          ],
+          "dataset": "gfsatmos",
+          "cycle": "2026072500"
         }
       }
     },
@@ -213,7 +413,47 @@
             "F002",
             "F003"
           ],
-          "dataset": "gfswave"
+          "dataset": "gfswave",
+          "cycle": "2026072500"
+        },
+        "Atmosphere": {
+          "parameters": {
+            "sfc_temp": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rh": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "mslp_wind": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rain_rh700": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ]
+          },
+          "models": [
+            "GFS"
+          ],
+          "timestamps": [
+            "F000",
+            "F001",
+            "F002",
+            "F003"
+          ],
+          "dataset": "gfsatmos",
+          "cycle": "2026072500"
         }
       }
     },
@@ -249,7 +489,47 @@
             "F002",
             "F003"
           ],
-          "dataset": "gfswave"
+          "dataset": "gfswave",
+          "cycle": "2026072500"
+        },
+        "Atmosphere": {
+          "parameters": {
+            "sfc_temp": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rh": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "mslp_wind": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rain_rh700": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ]
+          },
+          "models": [
+            "GFS"
+          ],
+          "timestamps": [
+            "F000",
+            "F001",
+            "F002",
+            "F003"
+          ],
+          "dataset": "gfsatmos",
+          "cycle": "2026072500"
         }
       }
     },
@@ -285,7 +565,47 @@
             "F002",
             "F003"
           ],
-          "dataset": "gfswave"
+          "dataset": "gfswave",
+          "cycle": "2026072500"
+        },
+        "Atmosphere": {
+          "parameters": {
+            "sfc_temp": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rh": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "mslp_wind": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rain_rh700": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ]
+          },
+          "models": [
+            "GFS"
+          ],
+          "timestamps": [
+            "F000",
+            "F001",
+            "F002",
+            "F003"
+          ],
+          "dataset": "gfsatmos",
+          "cycle": "2026072500"
         }
       }
     },
@@ -321,9 +641,55 @@
             "F002",
             "F003"
           ],
-          "dataset": "gfswave"
+          "dataset": "gfswave",
+          "cycle": "2026072500"
+        },
+        "Atmosphere": {
+          "parameters": {
+            "sfc_temp": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rh": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "mslp_wind": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ],
+            "rain_rh700": [
+              "F000",
+              "F001",
+              "F002",
+              "F003"
+            ]
+          },
+          "models": [
+            "GFS"
+          ],
+          "timestamps": [
+            "F000",
+            "F001",
+            "F002",
+            "F003"
+          ],
+          "dataset": "gfsatmos",
+          "cycle": "2026072500"
         }
       }
     }
+  },
+  "cycle": "2026072500",
+  "updated": "2026072500",
+  "cycles": {
+    "gfswave": "2026072500",
+    "gfsatmos": "2026072500"
   }
 }

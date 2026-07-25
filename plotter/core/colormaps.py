@@ -49,10 +49,12 @@ NUSAWAVE_PALETTES: dict[str, list[str]] = {
         "#F8FAFC", "#E0F2FE", "#BAE6FD", "#7DD3FC", "#38BDF8", NW_BLUE,
         "#1D4ED8", "#3730A3", "#5B21B6", NW_VIOLET, NW_PLUM,
     ],
-    # Air temperature (°C) — cool indigo to warm coral
+    # Air temperature (°C) — smooth indigo → blue → teal → green → gold → red (no grey)
     "nusawave_temp": [
-        "#312E81", "#4338CA", NW_BLUE, "#94A3B8", "#CBD5E1",
-        "#FDE68A", NW_GOLD, NW_CORAL, NW_RED,
+        "#312E81", "#3538A8", "#3B4FC4", "#2563EB", "#0EA5E9",
+        "#06B6D4", "#0891B2", "#14B8A6", "#10B981", "#34D399",
+        "#6EE7B7", "#A3E635", "#D9F99D", "#FDE047", "#FACC15",
+        NW_GOLD, "#FB923C", NW_CORAL, "#EF4444", NW_RED, "#991B1B",
     ],
     # Relative humidity (%)
     "nusawave_rh": [
@@ -137,12 +139,25 @@ def build_cmap_norm(config):
     return cmap, norm, levels
 
 
-def colorbar_ticks(levels, max_ticks: int = 14):
-    """Subsample level ticks for readable colorbars."""
+def colorbar_ticks(levels, max_ticks: int = 20):
+    """Subsample level ticks for readable colorbars.
+
+    Prefers an even integer stride so labels stay regularly spaced
+    (e.g. 18,20,22,… instead of irregular skips).
+    """
     if not isinstance(levels, list) or len(levels) <= max_ticks:
         return levels
-    idx = np.linspace(0, len(levels) - 1, max_ticks, dtype=int)
-    return [levels[i] for i in idx]
+
+    n = len(levels)
+    # Choose smallest stride that keeps tick count <= max_ticks.
+    stride = 1
+    while (n + stride - 1) // stride > max_ticks:
+        stride += 1
+
+    ticks = levels[::stride]
+    if ticks[-1] != levels[-1]:
+        ticks = list(ticks) + [levels[-1]]
+    return ticks
 
 
 def _resample_colors(colors: list[str], n: int) -> list[str]:

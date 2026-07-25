@@ -14,7 +14,8 @@ from plotter.core.config_loader import load_param_config
 
 CATALOG_PATH = ROOT / "docs" / "PRODUCT_CATALOG.md"
 MAPS_ROOT = ROOT / "assets" / "maps"
-FILE_PATTERN = re.compile(r"^(?P<param>[a-z_]+)_(?P<hour>\d{3})\.webp$")
+# Param may contain digits (e.g. rain_rh700); the 3-digit hour suffix anchors the split.
+FILE_PATTERN = re.compile(r"^(?P<param>[a-z0-9_]+)_(?P<hour>\d{3})\.webp$")
 
 STATUS_ORDER = ("production", "ready", "stub")
 

@@ -26,9 +26,10 @@ MAX_HOURS="${MAX_HOURS:-$(default_max_hours)}"
 
 echo "[INFO] Plot finished. Regenerating config..."
 if [ -n "$CYCLE" ]; then
-    python3 scripts/generate_config.py --dataset gfswave --cycle "$CYCLE" --max-hours "$MAX_HOURS"
+    python3 scripts/generate_config.py --cycle "$CYCLE" --max-hours "$MAX_HOURS"
 else
-    python3 scripts/generate_config.py --dataset gfswave --max-hours "$MAX_HOURS"
+    python3 scripts/generate_config.py --max-hours "$MAX_HOURS"
 fi
 
 echo "[INFO] Config updated."
+python3 scripts/generate_product_catalog.py || true

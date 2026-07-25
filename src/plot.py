@@ -20,7 +20,7 @@ from plotter.core.map_assets import clear_param_maps, verify_param_maps
 from plotter.core.utils import get_dataset_url, load_model_params
 
 GFSWAVE_PARAMS = ("wind", "swh", "swell")
-GFSATMOS_PARAMS = ("rainrate", "temp", "relhum", "mslp")
+GFSATMOS_PARAMS = ("temp", "relhum", "mslp_wind", "rain_rh700")
 DATASET_PARAMS = {
     "gfswave": GFSWAVE_PARAMS,
     "gfsatmos": GFSATMOS_PARAMS,
@@ -82,13 +82,16 @@ def main():
     plot_params = [p for p in params if p in yaml_params]
     clear_param_maps(maps_root, regions, plot_params, max_hours=max_t)
 
-    if args.dataset == "gfswave":
-        from plotter.core.grib_loader import load_gfswave_forecast
+    if args.dataset in ("gfswave", "gfsatmos"):
+        if args.dataset == "gfswave":
+            from plotter.core.grib_loader import load_gfswave_forecast as load_forecast
+        else:
+            from plotter.core.grib_loader import load_gfsatmos_forecast as load_forecast
 
         hours_completed = 0
         for t in range(max_t):
             try:
-                ds = load_gfswave_forecast(args.cycle, t)
+                ds = load_forecast(args.cycle, t)
             except Exception as exc:
                 print(f"[WARN] No data at t+{t:03d}h, stopping: {exc}")
                 break

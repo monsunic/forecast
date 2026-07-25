@@ -47,9 +47,18 @@ def test_build_cmap_norm_extend_max():
 def test_colorbar_ticks_subsample():
     levels = list(range(0, 101, 5))
     ticks = colorbar_ticks(levels, max_ticks=10)
-    assert len(ticks) <= 10
+    assert len(ticks) <= 11  # stride subsample may append final level
     assert ticks[0] == 0
     assert ticks[-1] == 100
+
+
+def test_colorbar_ticks_keeps_even_stride():
+    levels = list(range(18, 37))  # 18..36 inclusive
+    ticks = colorbar_ticks(levels, max_ticks=14)
+    assert ticks[0] == 18
+    assert ticks[-1] == 36
+    # Even 2°C stride when crowding forces subsample
+    assert all((t - ticks[0]) % 2 == 0 for t in ticks[:-1] if len(ticks) < len(levels)) or ticks == levels
 
 
 @pytest.mark.parametrize(

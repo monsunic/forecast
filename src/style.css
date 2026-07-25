@@ -80,7 +80,7 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, '
     height: auto;
 }
 
-/* image fits container */
+/* image fits container; HTML width/height on #mapImage reserve first-paint space */
 #mapImage {
     width: 100%;
     height: auto;
@@ -162,18 +162,23 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, '
 }
 
 .overview-btn {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #cfe0f5;
+    padding: 8px 10px;
+    border: 1px solid #dfeaf7;
     border-radius: 8px;
-    background: #f0f7ff;
-    color: var(--accent, #1a5fb4);
+    background: white;
+    min-width: 200px;
+    max-width: 200px;
+    color: var(--text);
+    font: inherit;
     font-weight: 600;
     cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
 }
 
 .overview-btn:hover {
-    background: #e3f0ff;
+    background: #f0f7ff;
+    border-color: #cfe0f5;
 }
 
 /* Responsive */
@@ -189,6 +194,10 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, '
 .controls{flex-direction:column;align-items:stretch}
 .timectrl{margin-left:0}
 .controls select{
+    min-width:100%;
+    max-width:100%;
+}
+.overview-btn{
     min-width:100%;
     max-width:100%;
 }

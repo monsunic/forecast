@@ -15,6 +15,8 @@ HANDLERS = [
     ("temp", "TempHandler"),
     ("relhum", "RelhumHandler"),
     ("mslp", "MslpHandler"),
+    ("mslp_wind", "MslpWindHandler"),
+    ("rain_rh700", "RainRh700Handler"),
 ]
 
 

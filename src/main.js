@@ -66,13 +66,50 @@
         surface_wind: 'wind',
         swh: 'swh',
         swell: 'swell',
-        rain: 'rainrate',
         sfc_temp: 'temp',
         rh: 'relhum',
-        mslp: 'mslp',
+        mslp_wind: 'mslp_wind',
+        rain_rh700: 'rain_rh700',
         sst: 'seatemp',
         sss: 'seasalt',
         ssh: 'ssh',
+    };
+
+    // Human-readable dropdown labels (from docs/PRODUCT_CATALOG.md display names)
+    const PARAM_LABELS = {
+        surface_wind: 'Surface Wind',
+        swh: 'Significant Wave Height',
+        swell: 'Primary Swell',
+        sfc_temp: 'Surface Air Temperature',
+        rh: 'Surface Relative Humidity',
+        mslp_wind: 'Surface Wind + MSLP',
+        rain_rh700: 'Rainfall + 700 hPa Humidity',
+        sst: 'Sea Temperature',
+        sss: 'Sea Salinity',
+        ssh: 'Sea Surface Height',
+    };
+
+    // Forecast-type category each parameter belongs to (grouped by dataset family)
+    const PARAM_CATEGORY = {
+        surface_wind: 'Wind and Waves',
+        swh: 'Wind and Waves',
+        swell: 'Wind and Waves',
+        sfc_temp: 'Atmosphere',
+        rh: 'Atmosphere',
+        mslp_wind: 'Atmosphere',
+        rain_rh700: 'Atmosphere',
+        sst: 'Ocean',
+        sss: 'Ocean',
+        ssh: 'Ocean',
+    };
+
+    const CATEGORY_ORDER = ['Wind and Waves', 'Atmosphere', 'Ocean'];
+
+    // Preferred parameter order within a category (unlisted keys keep discovery order).
+    const PARAM_ORDER = {
+        'Wind and Waves': ['surface_wind', 'swh', 'swell'],
+        Atmosphere: ['rain_rh700', 'mslp_wind', 'sfc_temp', 'rh'],
+        Ocean: ['sst', 'sss', 'ssh'],
     };
 
     const MODEL_DATASET = {
@@ -80,34 +117,142 @@
         WW3: 'gfswave',
     };
 
+    const STATIC_MAP = 'assets/maps/staticmap.png';
+
     let playInterval = null;
     let pendingMapSrc = null;
+    let preloadGen = 0;
+    const preloadCache = new Set();
 
     function showStaticMap() {
         pendingMapSrc = null;
-        mapImage.src = 'assets/maps/staticmap.png';
+        mapImage.src = STATIC_MAP;
     }
 
     mapImage.addEventListener('error', () => {
         const failed = pendingMapSrc || mapImage.getAttribute('src');
-        if (!failed || failed.includes('staticmap.png')) return;
+        if (!failed || failed.includes('staticmap')) return;
         console.warn('Map image missing, falling back to overview:', failed);
         pendingMapSrc = null;
-        mapImage.src = 'assets/maps/staticmap.png';
+        mapImage.src = STATIC_MAP;
     });
+
+    // Keep width/height attrs in sync so the browser can reserve space accurately.
+    mapImage.addEventListener('load', () => {
+        if (mapImage.naturalWidth > 0) {
+            mapImage.width = mapImage.naturalWidth;
+            mapImage.height = mapImage.naturalHeight;
+        }
+    });
+
+    function mapFrameUrl(dataset, region, paramSlug, timeIndex) {
+        return `assets/maps/${dataset}/${region}/${paramSlug}_${timeIndex}.webp`;
+    }
+
+    // Prefetch all forecast hours for the current region/param so play is smooth.
+    function preloadFrames() {
+        const region = regionSelect.value;
+        const param = parameterSelect.value;
+        const model = modelSelect.value;
+        if (isRegionPlaceholder(region) || isPlaceholderOption(param)) return;
+
+        const meta = forecastMeta();
+        const paramSlug = PARAM_SLUGS[param] || param;
+        const dataset = meta.dataset || MODEL_DATASET[model] || 'gfswave';
+        const paramTimes = meta.parameters?.[param];
+        const times = Array.isArray(paramTimes) && paramTimes.length
+            ? paramTimes.filter(t => timeIndexFromLabel(t))
+            : (meta.timestamps || []).filter(t => timeIndexFromLabel(t));
+
+        const gen = ++preloadGen;
+        times.forEach(label => {
+            const idx = timeIndexFromLabel(label);
+            if (!idx) return;
+            const src = mapFrameUrl(dataset, region, paramSlug, idx);
+            if (preloadCache.has(src)) return;
+            const img = new Image();
+            img.onload = () => {
+                if (gen === preloadGen) preloadCache.add(src);
+            };
+            img.src = src;
+        });
+    }
 
 
     /* ------------------------------------------------------------
      * Helper
      * ------------------------------------------------------------ */
-    function populate(sel, items) {
+    function populate(sel, items, labelFn, preferred) {
         sel.innerHTML = "";
         items.forEach(v => {
             const o = document.createElement('option');
             o.value = v;
-            o.textContent = v;
+            o.textContent = labelFn ? labelFn(v) : v;
             sel.appendChild(o);
         });
+        if (preferred && items.includes(preferred)) {
+            sel.value = preferred;
+        }
+    }
+
+    // Show friendly parameter names while keeping the slug as the option value.
+    function relabelParameters() {
+        [...parameterSelect.options].forEach(opt => {
+            if (PARAM_LABELS[opt.value]) opt.textContent = PARAM_LABELS[opt.value];
+        });
+    }
+
+    // Re-organise a region's forecast types into dataset-family categories.
+    // Driven entirely by config.json, so only parameters that actually have
+    // deployed maps ever appear in the dropdowns.
+    function regroupRegion(regionMeta) {
+        const srcTypes = regionMeta?.forecast_types || {};
+        const grouped = {};
+
+        for (const typeMeta of Object.values(srcTypes)) {
+            const params = typeMeta?.parameters || {};
+            for (const [pkey, times] of Object.entries(params)) {
+                const cat = PARAM_CATEGORY[pkey] || 'Other';
+                if (!grouped[cat]) {
+                    grouped[cat] = {
+                        parameters: {},
+                        models: typeMeta.models || ['GFS'],
+                        timestamps: typeMeta.timestamps || [],
+                        dataset: typeMeta.dataset || 'gfswave',
+                        cycle: typeMeta.cycle || null,
+                    };
+                }
+                grouped[cat].parameters[pkey] = times;
+                // Prefer a non-empty cycle if another typeMeta supplies one.
+                if (typeMeta.cycle && !grouped[cat].cycle) {
+                    grouped[cat].cycle = typeMeta.cycle;
+                }
+                if (typeMeta.dataset) {
+                    grouped[cat].dataset = typeMeta.dataset;
+                }
+            }
+        }
+
+        // Preserve a stable category order, with any unknown groups last.
+        const ordered = {};
+        CATEGORY_ORDER.forEach(c => { if (grouped[c]) ordered[c] = grouped[c]; });
+        Object.keys(grouped).forEach(c => { if (!ordered[c]) ordered[c] = grouped[c]; });
+
+        // Stable parameter order within each category.
+        for (const [cat, meta] of Object.entries(ordered)) {
+            const preferred = PARAM_ORDER[cat] || [];
+            const params = meta.parameters || {};
+            const sorted = {};
+            preferred.forEach(key => {
+                if (params[key]) sorted[key] = params[key];
+            });
+            Object.keys(params).forEach(key => {
+                if (!sorted[key]) sorted[key] = params[key];
+            });
+            meta.parameters = sorted;
+        }
+
+        return Object.assign({}, regionMeta, { forecast_types: ordered });
     }
 
 
@@ -123,6 +268,43 @@
     function timeIndexFromLabel(label) {
         const m = /^F(\d+)$/.exec(label || '');
         return m ? m[1].padStart(3, '0') : null;
+    }
+
+    function formatTimeLabel(fLabel) {
+        const m = /^F(\d+)$/.exec(fLabel || '');
+        if (!m) return fLabel;
+        const fh = parseInt(m[1], 10);
+        const cycle =
+            forecastMeta()?.cycle ||
+            CONFIG?.cycles?.[forecastMeta()?.dataset] ||
+            CONFIG?.cycle ||
+            CONFIG?.updated;
+        if (cycle && /^\d{10}$/.test(String(cycle))) {
+            const c = String(cycle);
+            const valid = new Date(Date.UTC(
+                +c.slice(0, 4),
+                +c.slice(4, 6) - 1,
+                +c.slice(6, 8),
+                +c.slice(8, 10) + fh
+            ));
+            const months = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December',
+            ];
+            const month = months[valid.getUTCMonth()];
+            const day = valid.getUTCDate();
+            const year = valid.getUTCFullYear();
+            const hh = String(valid.getUTCHours()).padStart(2, '0');
+            const mm = String(valid.getUTCMinutes()).padStart(2, '0');
+            return `${month} ${day}, ${year} at ${hh}:${mm} UTC`;
+        }
+        return fh === 0 ? 't+0h (analysis)' : `t+${fh}h`;
+    }
+
+    function relabelTimes() {
+        [...timeSelect.options].forEach(opt => {
+            if (timeIndexFromLabel(opt.value)) opt.textContent = formatTimeLabel(opt.value);
+        });
     }
 
     function isPlaceholderOption(value) {
@@ -171,7 +353,7 @@
         }
 
         const dataset = meta.dataset || MODEL_DATASET[model] || 'gfswave';
-        pendingMapSrc = `assets/maps/${dataset}/${region}/${paramSlug}_${timeIndex}.webp`;
+        pendingMapSrc = mapFrameUrl(dataset, region, paramSlug, timeIndex);
         mapImage.src = pendingMapSrc;
     }
 
@@ -187,6 +369,13 @@
     }
     function loadForecastTypes() {
         const region = regionSelect.value;
+        // Keep the current product selection when switching regions.
+        const prev = {
+            type: forecastSelect.value,
+            param: parameterSelect.value,
+            model: modelSelect.value,
+            time: timeSelect.value,
+        };
         if (isRegionPlaceholder(region)) {
 
             populate(forecastSelect, ["Type (Select a region first)"]);
@@ -199,11 +388,11 @@
             return;
         }
         const types = Object.keys(CONFIG.regions[region]?.forecast_types || {});
-        populate(forecastSelect, types.length ? types : ['Type (no data)']);
-        loadParameters();
+        populate(forecastSelect, types.length ? types : ['Type (no data)'], null, prev.type);
+        loadParameters(prev);
     }
 
-    function loadParameters() {
+    function loadParameters(prev) {
         const region = regionSelect.value;
         const type = forecastSelect.value;
         if (isPlaceholderOption(type)) {
@@ -215,11 +404,17 @@
         }
         const meta = CONFIG.regions[region]?.forecast_types?.[type];
         const params = Object.keys(meta?.parameters || {});
-        populate(parameterSelect, params.length ? params : ['Parameter (no data)']);
-        loadModels();
+        populate(
+            parameterSelect,
+            params.length ? params : ['Parameter (no data)'],
+            null,
+            prev?.param
+        );
+        relabelParameters();
+        loadModels(prev);
     }
 
-    function loadModels() {
+    function loadModels(prev) {
         const meta = forecastMeta();
         if (isPlaceholderOption(forecastSelect.value)) {
             populate(modelSelect, ['Model (Select type first)']);
@@ -228,11 +423,11 @@
             return;
         }
         const models = meta.models || [];
-        populate(modelSelect, models.length ? models : ['GFS']);
-        loadTimes();
+        populate(modelSelect, models.length ? models : ['GFS'], null, prev?.model);
+        loadTimes(prev);
     }
 
-    function loadTimes() {
+    function loadTimes(prev) {
         const meta = forecastMeta();
         const param = parameterSelect.value;
         if (isPlaceholderOption(param)) {
@@ -244,8 +439,14 @@
         const times = Array.isArray(paramTimes) && paramTimes.length
             ? paramTimes.filter(t => timeIndexFromLabel(t))
             : (meta.timestamps || []).filter(t => timeIndexFromLabel(t));
-        populate(timeSelect, times.length ? times : ['Time (no data)']);
+        populate(
+            timeSelect,
+            times.length ? times : ['Time (no data)'],
+            formatTimeLabel,
+            prev?.time
+        );
         updateMap();
+        preloadFrames();
     }
 
     function validTimeOptions() {
@@ -487,7 +688,11 @@
                     };
                 }
             }
-            CONFIG.regions = cfgRegions;
+            // Re-group each region's parameters into dataset-family categories.
+            for (const key of Object.keys(CONFIG.regions)) {
+                if (isRegionPlaceholder(key)) continue;
+                CONFIG.regions[key] = regroupRegion(CONFIG.regions[key]);
+            }
 
             populateRegionSelect();
 

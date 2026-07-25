@@ -68,7 +68,7 @@ class Plotter:
         except ModuleNotFoundError as e:
             raise ModuleNotFoundError(f"[ERROR] Handler '{module_name}' not found: {e}")
 
-        class_name = param.capitalize() + "Handler"
+        class_name = "".join(part.capitalize() for part in param.split("_")) + "Handler"
 
         if not hasattr(module, class_name):
             raise ImportError(f"[ERROR] Class '{class_name}' not found in '{module_name}'")

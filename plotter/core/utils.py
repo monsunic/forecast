@@ -107,7 +107,8 @@ def get_dataset_url(dataset, cycle):
         return gfswave_grib_url(cycle, 0)
 
     if dataset == "gfsatmos":
-        return f"https://nomads.ncep.noaa.gov/dods/gfs_0p25/gfs{y}{m}{d}/gfs_0p25_{h}z"
+        from .grib_loader import gfsatmos_grib_url
+        return gfsatmos_grib_url(cycle, 0)
     
     if dataset == "ecmwfatmos":
         return f"https://example.ecmwf.int/era5_{y}{m}{d}_{h}.nc"   # placeholder
@@ -132,6 +133,13 @@ def open_dataset(dataset, cycle, max_hours=None):
             return load_gfswave_forecast(cycle, 0)
         hours = max_hours or 72
         return load_gfswave_cycle(cycle, hours)
+
+    if dataset == "gfsatmos":
+        from .grib_loader import load_gfsatmos_cycle, load_gfsatmos_forecast
+        if max_hours is not None and max_hours == 1:
+            return load_gfsatmos_forecast(cycle, 0)
+        hours = max_hours or 72
+        return load_gfsatmos_cycle(cycle, hours)
 
     import xarray as xr
     url = get_dataset_url(dataset, cycle)
