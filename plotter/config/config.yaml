@@ -5,57 +5,37 @@ regions:
 
   malacca_strait:
     bbox: [95, 105, 0, 6]
-    quiver:
-      skip: 2
-      scale: 50
 
   south_china_sea:
     bbox: [105.5, 121, 6, 25]
-    quiver:
-      skip: 3
-      scale: 55
 
   philippines:
     bbox: [116, 130, 6, 20]
-    quiver:
-      skip: 3
-      scale: 55
 
   andaman_gulf_thailand:
     bbox: [90, 105.5, 6, 18]
-    quiver:
-      skip: 3
-      scale: 55
 
   java_nusa_tenggara:
     bbox: [103, 128, -13, -3]
-    quiver:
-      skip: 2
-      scale: 50
 
   western_indo:
     bbox: [95, 120, -13, 6]
-    quiver:
-      skip: 4
-      scale: 60
 
   eastern_indo:
     bbox: [120, 141, -13, 6]
-    quiver:
-      skip: 4
-      scale: 60
 
   indonesia:
     bbox: [90, 141, -13, 6]
-    quiver:
-      skip: 4
-      scale: 60
 
   southeast_asia:
     bbox: [90, 150, -20, 25]
-    quiver:
-      skip: 5
-      scale: 70
+# ========================================================
+# FORECAST RUN SETTINGS
+# ========================================================
+forecast:
+  # Hourly window F000 … F{max_hours-1}. Override via --max-hours / MAX_HOURS.
+  max_hours: 24
+
 # ========================================================
 # GLOBAL FALLBACK DEFAULTS
 # ========================================================
@@ -72,8 +52,237 @@ defaults:
     minlength: 0.1
     minshaft: 0.1
     pivot: "middle"
-    skipfactor: 30
-    scalefactor: 30
+    # width/height ratio at/above which a map counts as "landscape".
+    landscape_aspect: 1.5
+    # Arrows per figure-inch along each edge. Portrait packs denser; landscape
+    # stays looser so the long edge isn't a wall of arrows.
+    per_inch_landscape: 1.9
+    per_inch_portrait: 2.6
+    # Direction arrow length = arrow_frac × shorter map side. Landscape maps have
+    # a short vertical span, so they use a larger fraction to look bigger.
+    arrow_frac: 0.024
+    arrow_frac_landscape: 0.050
+  windbarb:
+    length: 5.0
+    barbcolor: black
+    linewidth: 0.45
+    pivot: middle
+    per_inch_landscape: 1.9
+    per_inch_portrait: 2.6
+
+# ========================================================
+# PRODUCT CATALOG (metadata + plot types)
+# ========================================================
+products:
+
+  wind:
+    slug: wind
+    ui_key: surface_wind
+    dataset: gfswave
+    model: GFS
+    forecast_type: "Wind and Waves"
+    status: production
+    plot:
+      scalar:
+        method: contourf
+        colormap_type: discrete
+      vector:
+        method: windbarb
+        overlay: true
+      colorbar:
+        enabled: true
+        orientation: horizontal
+        extend: max
+
+  swh:
+    slug: swh
+    ui_key: swh
+    dataset: gfswave
+    model: GFS
+    forecast_type: "Wind and Waves"
+    status: production
+    plot:
+      scalar:
+        method: contourf
+        colormap_type: discrete
+      vector:
+        method: quiver
+        overlay: true
+      colorbar:
+        enabled: true
+        orientation: horizontal
+        extend: max
+
+  swell:
+    slug: swell
+    ui_key: swell
+    dataset: gfswave
+    model: GFS
+    forecast_type: "Wind and Waves"
+    status: production
+    plot:
+      scalar:
+        method: contourf
+        colormap_type: discrete
+      vector:
+        method: quiver
+        overlay: true
+      colorbar:
+        enabled: true
+        orientation: horizontal
+        extend: max
+
+  rainrate:
+    slug: rainrate
+    ui_key: rain
+    dataset: gfsatmos
+    model: GFS
+    forecast_type: "Atmosphere"
+    status: ready
+    plot:
+      scalar:
+        method: pcolormesh
+        colormap_type: discrete
+      vector:
+        method: none
+        overlay: false
+      colorbar:
+        enabled: true
+        orientation: horizontal
+        extend: max
+
+  temp:
+    slug: temp
+    ui_key: sfc_temp
+    dataset: gfsatmos
+    model: GFS
+    forecast_type: "Atmosphere"
+    status: ready
+    plot:
+      scalar:
+        method: pcolormesh
+        colormap_type: discrete
+      vector:
+        method: none
+        overlay: false
+      colorbar:
+        enabled: true
+        orientation: horizontal
+        extend: both
+
+  relhum:
+    slug: relhum
+    ui_key: rh
+    dataset: gfsatmos
+    model: GFS
+    forecast_type: "Atmosphere"
+    status: ready
+    plot:
+      scalar:
+        method: pcolormesh
+        colormap_type: discrete
+      vector:
+        method: none
+        overlay: false
+      colorbar:
+        enabled: true
+        orientation: horizontal
+        extend: neither
+
+  mslp:
+    slug: mslp
+    ui_key: mslp
+    dataset: gfsatmos
+    model: GFS
+    forecast_type: "Atmosphere"
+    status: ready
+    plot:
+      scalar:
+        method: contour
+        colormap_type: none
+      vector:
+        method: none
+        overlay: false
+      colorbar:
+        enabled: false
+        orientation: horizontal
+        extend: null
+
+  seatemp:
+    slug: seatemp
+    ui_key: sst
+    dataset: hycom
+    model: HYCOM
+    forecast_type: "Ocean"
+    status: ready
+    plot:
+      scalar:
+        method: pcolormesh
+        colormap_type: discrete
+      vector:
+        method: none
+        overlay: false
+      colorbar:
+        enabled: true
+        orientation: horizontal
+        extend: both
+
+  seasalt:
+    slug: seasalt
+    ui_key: sss
+    dataset: hycom
+    model: HYCOM
+    forecast_type: "Ocean"
+    status: ready
+    plot:
+      scalar:
+        method: pcolormesh
+        colormap_type: discrete
+      vector:
+        method: none
+        overlay: false
+      colorbar:
+        enabled: true
+        orientation: horizontal
+        extend: both
+
+  seacurrent:
+    slug: seacurrent
+    ui_key: null
+    dataset: hycom
+    model: HYCOM
+    forecast_type: "Ocean"
+    status: ready
+    plot:
+      scalar:
+        method: contourf
+        colormap_type: discrete
+      vector:
+        method: quiver
+        overlay: true
+      colorbar:
+        enabled: true
+        orientation: horizontal
+        extend: max
+
+  ssh:
+    slug: ssh
+    ui_key: ssh
+    dataset: cmems
+    model: CMEMS
+    forecast_type: "Ocean"
+    status: ready
+    plot:
+      scalar:
+        method: contourf
+        colormap_type: discrete
+      vector:
+        method: none
+        overlay: false
+      colorbar:
+        enabled: true
+        orientation: horizontal
+        extend: both
 
 # ========================================================
 # VARIABLE-SPECIFIC SETTINGS
@@ -84,8 +293,9 @@ variables:
     var2display: "Rainfall Rate"
     unit: "mm/hr"
     cbrlabel: "Rainfall Rate"
-    cmap: Blues
-    clims: [0, 20]
+    palette: nusawave_rain
+    levels: [0, 0.5, 1, 2, 3, 5, 7, 10, 12, 15, 20]
+    extend: max
 
   mslp:
     var2display: "Mean Sea Level Pressure"
@@ -97,79 +307,82 @@ variables:
       step: 2
     contour:
       linewidth: 0.7
+      colors: "#0B2340"
       interval: 2
   
   temp:
     var2display: "Air Temperature"
     unit: "degC"
     cbrlabel: "Air Temperature"
-    cmap: RdYlBu_r
-    levels: [20, 35]
+    palette: nusawave_temp
+    levels: [20, 22, 24, 26, 28, 30, 32, 34, 35]
+    extend: both
   
   relhum:
     var2display: "Relative Humidity"
     unit: "%"
     cbrlabel: "Relative Humidity"
-    cmap: BrBG
-    levels: [0, 100]
+    palette: nusawave_rh
+    levels: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
   wind:
     var2display: "Surface Wind Speed and Direction"
     unit: "knots"
+    # GRIB u/v are m/s; multiply by scale for colorbar/levels in knots (3600/1852).
+    scale: 1.943844492440496
     cbrlabel: "Surface Wind Speed and Direction"
     arrlabel: "Wind Direction"
-    levels: [0,2,4,6,8,10,15,20,25,30,35,40,50,60]
-    cmap: ["#C6EBFF","#A5D7E7","#63C7F7","#B5FFBD","#39E369",
-          "#B5DF73","#EFE66B","#F7BA73","#FF5D21","#CE200F",
-          "#FF2029","#E639C6","#AD348C","#6B176E"]
-    extend: "max"
+    palette: nusawave_wind
+    levels: [0, 2, 4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 50, 60]
+    extend: max
   
   swh:
     var2display: "Significant Wave Height and Direction"
     unit: "meter"
     cbrlabel: "Significant Wave Height and Direction"
     arrlabel: "Wave Direction"
-    levels: [0,0.5,0.75,1,1.25,1.5,2,2.5,3,3.5,4,5,6,7]
-    cmap: ["#0760E6", "#3175BC", "#5BBEE7", "#01FBBE", "#01D743",
-          "#FFFB52", "#FFAB31", "#FF7D29", "#9C4510", "#E7453A",
-          "#C72C32", "#E734C6", "#B5349B", "#691D77"]
-    extend: "max"
+    palette: nusawave_wave
+    levels: [0, 0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7]
+    extend: max
 
   swell:
     var2display: "Primary Swell Height and Direction"
     unit: "meter"
     cbrlabel: "Primary Swell Height and Direction"
     arrlabel: "Swell Direction"
-    levels: [0,0.5,0.75,1,1.25,1.5,2,2.5,3,3.5,4,5,6,7]
-    cmap: ["#0760E6", "#3175BC", "#5BBEE7", "#01FBBE", "#01D743",
-          "#FFFB52", "#FFAB31", "#FF7D29", "#9C4510", "#E7453A",
-          "#C72C32", "#E734C6", "#B5349B", "#691D77"]
-    extend: "max"
+    palette: nusawave_swell
+    levels: [0, 0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7]
+    extend: max
 
   seacurrent:
     var2display: "Sea Current and Direction"
     unit: "cm/s"
-    cbrlabel: "Sea Current and Direction"
+    cbrlabel: "Sea Current Speed and Direction"
     arrlabel: "Current Direction"
+    palette: nusawave_current
     levels: [0, 5, 10, 20, 30, 45, 60, 80, 100, 150, 200, 300, 400]
+    extend: max
 
   seatemp:
     var2display: "Sea Temperature"
     unit: "degC"
     cbrlabel: "Sea Temperature"
-    cmap: RdYlBu_r
-    levels: [16,18,20,22,24,26,26.5,27,27.5,28,28.5,29,29.5,30,30.5,31,31.5,32,34,36]
+    palette: nusawave_sst
+    levels: [16, 18, 20, 22, 24, 26, 26.5, 27, 27.5, 28, 28.5, 29, 29.5, 30, 30.5, 31, 31.5, 32, 34, 36]
+    extend: both
   
   seasalt:
     var2display: "Sea Salinity"
     unit: "PSU"
     cbrlabel: "Sea Salinity"
-    cmap: BrBG
-    levels: [30,30.5,31,31.5,32,32.5,33,33.5,34,34.5,35,35.5,36]
+    palette: nusawave_salinity
+    levels: [30, 30.5, 31, 31.5, 32, 32.5, 33, 33.5, 34, 34.5, 35, 35.5, 36]
+    extend: both
 
   ssh:
     var2display: "Sea Surface Height"
     unit: "meter"
     cbrlabel: "Sea Surface Height"
-    cmap: PuBuGn
-    levels: [-2,-1.75,-1.5,-1.25,-1,-0.75,-0.5,-0.25,0,0.25,0.5,0.75,1,1.25,1.5,1.75,2]
+    palette: nusawave_ssh
+    levels: [-2, -1.75, -1.5, -1.25, -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+    extend: both

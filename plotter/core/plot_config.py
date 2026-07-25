@@ -37,6 +37,7 @@ class PlotConfig:
         self.figsize = figsize
         self.dpi = dpi
         self.cmap = cmap
+        self.palette = kwargs.pop("palette", None)
         self.levels = levels
         self.extend = extend
         self.clims = clims
@@ -56,10 +57,35 @@ class PlotConfig:
         self.region = region
 
         self.quiver = {
-            "skip": 5,
-            "scale": 80,
+            "skip": None,
+            "scale": None,
             "width": 0.002,
             "color": "black",
+            "landscape_aspect": 1.5,
+            "per_inch_landscape": 1.9,
+            "per_inch_portrait": 2.6,
+            "arrow_frac": 0.024,
+            "arrow_frac_landscape": 0.050,
+        }
+
+        self.windbarb = {
+            "skip": None,
+            "length": 5.0,
+            "barbcolor": "black",
+            "linewidth": 0.5,
+            "pivot": "middle",
+            "per_inch_landscape": 1.9,
+            "per_inch_portrait": 2.6,
+        }
+
+        self.plot = {
+            "scalar": {"method": None, "colormap_type": None},
+            "vector": {"method": "none", "overlay": False},
+            "colorbar": {
+                "enabled": True,
+                "orientation": "horizontal",
+                "extend": None,
+            },
         }
 
         self.contour = {

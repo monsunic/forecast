@@ -4,10 +4,16 @@
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Optional
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from plotter.core.config_loader import get_default_max_hours
+
 CONFIG_PATH = ROOT / "assets" / "config" / "config.json"
 MAPS_ROOT = ROOT / "assets" / "maps"
 
@@ -69,15 +75,16 @@ def scan_dataset(dataset_dir: Path):
     return regions
 
 
-FORECAST_HOURS = 4
-
-
-def canonical_hours(max_hours: int = FORECAST_HOURS):
+def canonical_hours(max_hours: Optional[int] = None):
     """Fixed forecast window shared by all regions (F000 … F{max-1})."""
+    if max_hours is None:
+        max_hours = get_default_max_hours()
     return [f"{h:03d}" for h in range(max_hours)]
 
 
-def build_config(dataset: str, cycle: Optional[str] = None, max_hours: int = FORECAST_HOURS):
+def build_config(dataset: str, cycle: Optional[str] = None, max_hours: Optional[int] = None):
+    if max_hours is None:
+        max_hours = get_default_max_hours()
     scanned = scan_dataset(MAPS_ROOT / dataset)
     canon = canonical_hours(max_hours)
     regions = {"Select Region (or Click on Map)": {}}
@@ -129,11 +136,17 @@ def main():
     parser = argparse.ArgumentParser(description="Generate frontend config from map assets")
     parser.add_argument("--dataset", default="gfswave")
     parser.add_argument("--cycle", default=None, help="YYYYMMDDHH model cycle")
-    parser.add_argument("--max-hours", type=int, default=FORECAST_HOURS, help="Forecast hours in config")
+    parser.add_argument(
+        "--max-hours",
+        type=int,
+        default=None,
+        help="Forecast hours in config (default: forecast.max_hours from config.yaml)",
+    )
     parser.add_argument("--output", default=str(CONFIG_PATH))
     args = parser.parse_args()
 
-    config = build_config(args.dataset, args.cycle, args.max_hours)
+    max_hours = args.max_hours if args.max_hours is not None else get_default_max_hours()
+    config = build_config(args.dataset, args.cycle, max_hours)
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(config, indent=2) + "\n")

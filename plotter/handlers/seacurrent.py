@@ -1,6 +1,14 @@
 from ..core.base_handler import BaseHandler
-from ..core.utils import load_model_params, select_time, select_depth, select_bbox
-import cartopy.crs as ccrs
+from ..core.utils import (
+    load_model_params,
+    select_time,
+    select_depth,
+    select_bbox,
+    plot_vectors,
+)
+from ..core.scalar_plot import plot_scalar_field
+import numpy as np
+
 
 class SeacurrentHandler(BaseHandler):
     def load(self, ds):
@@ -18,13 +26,15 @@ class SeacurrentHandler(BaseHandler):
 
     def plot(self, ax, data):
         u, v = data
-        skip = self.config.quiver.get("skip", 5)
-        scale = self.config.quiver.get("scale", 80)
-        ax.quiver(
-            u.lon[::skip], u.lat[::skip],
-            u[::skip, ::skip], v[::skip, ::skip],
-            transform=ccrs.PlateCarree(),
-            scale=scale,
-            width=0.002,
+        mag = np.sqrt(u.values ** 2 + v.values ** 2)
+        im = plot_scalar_field(ax, u.lon, u.lat, mag, self.config)
+        iq = plot_vectors(
+            ax,
+            u.lon.values,
+            u.lat.values,
+            u.values,
+            v.values,
+            self.config,
+            direction_only=True,
         )
-        return None
+        return im, iq

@@ -1,6 +1,7 @@
 from ..core.base_handler import BaseHandler
 from ..core.utils import load_model_params, select_time, select_level, select_bbox
-import cartopy.crs as ccrs
+from ..core.scalar_plot import plot_scalar_field
+
 
 class RelhumHandler(BaseHandler):
     def load(self, ds):
@@ -13,9 +14,5 @@ class RelhumHandler(BaseHandler):
         return dset
     
     def plot(self, ax, rh):
-        return ax.pcolormesh(
-            rh.lon, rh.lat, rh,
-            cmap=self.config.cmap,
-            shading="auto",
-            transform=ccrs.PlateCarree(),
-        )
+        im = plot_scalar_field(ax, rh.lon, rh.lat, rh, self.config)
+        return im, None

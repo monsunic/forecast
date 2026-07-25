@@ -1,6 +1,7 @@
 from ..core.base_handler import BaseHandler
 from ..core.utils import load_model_params, select_bbox, select_time, select_depth
-import cartopy.crs as ccrs
+from ..core.scalar_plot import plot_scalar_field
+
 
 class SeatempHandler(BaseHandler):
     def load(self, ds):
@@ -13,9 +14,5 @@ class SeatempHandler(BaseHandler):
         return dset
 
     def plot(self, ax, sst):
-        return ax.pcolormesh(
-            sst.lon, sst.lat, sst,
-            cmap=self.config.cmap,
-            shading="auto",
-            transform=ccrs.PlateCarree(),
-        )
+        im = plot_scalar_field(ax, sst.lon, sst.lat, sst, self.config)
+        return im, None

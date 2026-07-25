@@ -20,9 +20,9 @@ class MslpHandler(BaseHandler):
                 self.config.levels["end"] + 1,
                 self.config.levels["step"],
             ),
-            colors="black",
+            colors=self.config.contour.get("colors", "#0B2340"),
             linewidths=self.config.contour["linewidth"],
             transform=ccrs.PlateCarree(),
         )
         ax.clabel(cs, fontsize=6)
-        return None  # no colorbar
+        return None, None  # no colorbar

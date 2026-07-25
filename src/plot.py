@@ -15,7 +15,8 @@ if str(ROOT) not in sys.path:
 
 from plotter.core.plotter import Plotter
 from plotter.core.plot_config import PlotConfig
-from plotter.core.config_loader import load_param_config
+from plotter.core.config_loader import get_default_max_hours, load_param_config
+from plotter.core.map_assets import clear_param_maps, verify_param_maps
 from plotter.core.utils import get_dataset_url, load_model_params
 
 GFSWAVE_PARAMS = ("wind", "swh", "swell")
@@ -34,11 +35,12 @@ def parse_args():
         choices=["gfsatmos", "gfswave", "ecmwfatmos", "ecmwfwave", "hycom", "cmems"],
     )
     parser.add_argument("--cycle", required=True, help="YYYYMMDDHH model cycle")
+    default_hours = get_default_max_hours()
     parser.add_argument(
         "--max-hours",
         type=int,
-        default=4,
-        help="Forecast length in hours (default: 4)",
+        default=default_hours,
+        help=f"Forecast length in hours (default: {default_hours} from config.yaml)",
     )
     parser.add_argument(
         "--MAXFORECAST",
@@ -77,10 +79,13 @@ def main():
     params_load = load_model_params(args.dataset)
 
     maps_root = ROOT / "assets" / "maps" / args.dataset
+    plot_params = [p for p in params if p in yaml_params]
+    clear_param_maps(maps_root, regions, plot_params, max_hours=max_t)
 
     if args.dataset == "gfswave":
         from plotter.core.grib_loader import load_gfswave_forecast
 
+        hours_completed = 0
         for t in range(max_t):
             try:
                 ds = load_gfswave_forecast(args.cycle, t)
@@ -91,10 +96,7 @@ def main():
             tforecast = pd.Timestamp(ds["time"].values[0])
 
             for region in regions:
-                for param in params:
-                    if param not in yaml_params:
-                        continue
-
+                for param in plot_params:
                     print(f"[INFO] Plotting {param} for region {region} at t+{t:03d}h")
 
                     cfg = PlotConfig(
@@ -113,6 +115,12 @@ def main():
 
                     plotter = Plotter(cfg)
                     plotter.plot_map(ds, param)
+            hours_completed = t + 1
+
+        if hours_completed == 0:
+            raise SystemExit("[ERROR] No forecast hours rendered")
+        verify_param_maps(maps_root, regions, plot_params, hours_completed)
+        print(f"[INFO] Rendered {hours_completed} hour(s) × {len(regions)} region(s)")
         return
 
     import xarray as xr
@@ -123,10 +131,7 @@ def main():
     for region in regions:
         for t in range(max_t):
             tforecast = pd.to_datetime(ds.isel({time_dim: t})["time"].values)
-            for param in params:
-                if param not in yaml_params:
-                    continue
-
+            for param in plot_params:
                 print(f"[INFO] Plotting {param} for region {region} at t+{t:03d}h")
 
                 cfg = PlotConfig(
@@ -145,6 +150,9 @@ def main():
 
                 plotter = Plotter(cfg)
                 plotter.plot_map(ds, param)
+
+    verify_param_maps(maps_root, regions, plot_params, max_t)
+    print(f"[INFO] Rendered {max_t} hour(s) × {len(regions)} region(s)")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,13 @@
 from ..core.base_handler import BaseHandler
-from ..core.utils import load_model_params, select_bbox, select_time, select_level, compute_quiver_params
-import cartopy.crs as ccrs
-import numpy as np
-import matplotlib.colors as mcolors
+from ..core.utils import (
+    load_model_params,
+    select_bbox,
+    select_time,
+    select_level,
+    plot_vectors,
+)
+from ..core.scalar_plot import plot_scalar_field
+
 
 class WindHandler(BaseHandler):
     def load(self, ds):
@@ -22,44 +27,26 @@ class WindHandler(BaseHandler):
         return u, v
 
     def plot(self, ax, data):
-        im, iq = None, None
         u, v = data
         lon = u.lon.values
         lat = u.lat.values
-        u_np = u.values
-        v_np = v.values
-        mag = np.sqrt(u_np**2 + v_np**2)
-        u_np = u_np / mag
-        v_np = v_np / mag
-        cmap = mcolors.ListedColormap(self.config.cmap)
-        norm = mcolors.BoundaryNorm(
-            boundaries=self.config.levels,
-            ncolors=cmap.N,
-            extend=self.config.extend,
-        )
-        skip, scale = compute_quiver_params(u.lat, u.lon, self.config)
-        if self.config.quiver.get('skip') and self.config.quiver.get('scale') is not None:
-            skip = self.config.quiver.get('skip')
-            scale = self.config.quiver.get('scale')
-        im = ax.contourf(
-            u.lon, u.lat, mag,
-            cmap=cmap,
-            norm=norm,
-            levels=self.config.levels,
-            extend=self.config.extend,
-            transform=ccrs.PlateCarree(),
-        )
-        iq = ax.quiver(
-            lon[::skip], lat[::skip],
-            u_np[::skip, ::skip], v_np[::skip, ::skip],
-            transform=ccrs.PlateCarree(),
-            scale=scale,
-            width=self.config.quiver.get("width"),
-            headwidth=self.config.quiver.get("headwidth"),
-            headlength=self.config.quiver.get("headlength"),
-            headaxislength=self.config.quiver.get("headaxislength"),
-            minlength=self.config.quiver.get("minlength"),
-            minshaft=self.config.quiver.get("minshaft"),
-            pivot=self.config.quiver.get("pivot"),
+        # GRIB u/v are m/s; variables.wind.scale converts to product unit (knots).
+        scale = float(getattr(self.config, "scale", 1.0))
+        u_np = u.values * scale
+        v_np = v.values * scale
+        mag = (u_np ** 2 + v_np ** 2) ** 0.5
+
+        im = plot_scalar_field(ax, u.lon, u.lat, mag, self.config)
+
+        vector_method = self.config.plot.get("vector", {}).get("method", "quiver")
+        direction_only = vector_method != "windbarb"
+        iq = plot_vectors(
+            ax,
+            lon,
+            lat,
+            u_np,
+            v_np,
+            self.config,
+            direction_only=direction_only,
         )
         return im, iq

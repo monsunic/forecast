@@ -1,6 +1,7 @@
 from ..core.base_handler import BaseHandler
 from ..core.utils import load_model_params, select_bbox, select_time
-import cartopy.crs as ccrs
+from ..core.scalar_plot import plot_scalar_field
+
 
 class RainrateHandler(BaseHandler):
     def load(self, ds):
@@ -9,16 +10,9 @@ class RainrateHandler(BaseHandler):
         dset = ds[varnames["var"]]
         dset = select_time(dset, self.config)
         dset = select_bbox(dset, self.config)
-        dset = dset*3600
+        dset = dset * 3600
         return dset
 
     def plot(self, ax, rain):
-        im = ax.pcolormesh(
-            rain.lon, rain.lat, rain,
-            cmap=self.config.cmap,
-            shading="auto",
-            vmin=self.config.clims[0],
-            vmax=self.config.clims[1],
-            transform=ccrs.PlateCarree(),
-        )
-        return im
+        im = plot_scalar_field(ax, rain.lon, rain.lat, rain, self.config)
+        return im, None

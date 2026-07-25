@@ -35,9 +35,11 @@ python scripts/generate_static_assets.py
 
 ### Run forecast plots manually
 
+Default forecast window is **24 hours** (`forecast.max_hours` in `plotter/config/config.yaml`). Override with `--max-hours` / `MAX_HOURS`.
+
 ```bash
-python src/plot.py --dataset gfswave --cycle 2025120700 --region indonesia --max-hours 4
-python scripts/generate_config.py --dataset gfswave --cycle 2025120700 --max-hours 4
+python src/plot.py --dataset gfswave --cycle 2025120700 --region indonesia --max-hours 24
+python scripts/generate_config.py --dataset gfswave --cycle 2025120700 --max-hours 24
 ```
 
 Or use the batch script (auto-selects latest available GFS cycle):
@@ -46,7 +48,7 @@ Or use the batch script (auto-selects latest available GFS cycle):
 bash scripts/run_forecast.sh
 ```
 
-Environment overrides: `CYCLE`, `MAX_HOURS` (default 4), `REGION`.
+Environment overrides: `CYCLE`, `MAX_HOURS`, `REGION`.
 
 ### Serve the site locally
 
@@ -67,6 +69,7 @@ Forecast maps use **NOAA GFS Wave** (0.25° global) via NOMADS HTTPS GRIB2 downl
 ## Project status (MVP)
 
 - **Map Forecast** — GFS Wave (wind, significant wave height, swell)
+- **Product catalog** — see [docs/PRODUCT_CATALOG.md](docs/PRODUCT_CATALOG.md) for all defined products, plot types (shaded `contourf`/`pcolormesh`, line `contour`, vector `quiver`/`windbarb`), and deployment status. Each shaded product uses a **Nusawave-branded discrete palette** from [`plotter/core/colormaps.py`](plotter/core/colormaps.py) (not BMKG-style defaults).
 - **Site / Route / Observations** — planned (UI placeholders)
 
 ## License

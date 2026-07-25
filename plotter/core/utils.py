@@ -153,36 +153,151 @@ def deep_update(base: dict, updates: dict):
             base[k] = v
     return base
 
-def compute_quiver_params(lat, lon, cfg):
+def _grid_shape(lat, lon):
     lat = np.asarray(lat)
     lon = np.asarray(lon)
+    n_lon = int(lon.size if lon.ndim == 1 else lon.shape[-1])
+    n_lat = int(lat.size if lat.ndim == 1 else lat.shape[0])
+    return n_lat, n_lon
 
-    # 1. Domain range
-    lat_range = float(lat.max() - lat.min())
-    lon_range = float(lon.max() - lon.min())
 
-    # 2. Robust resolution estimate
-    resolution = float(np.median(np.diff(lon)))
+def _figure_size(cfg):
+    figsize = getattr(cfg, "figsize", None) or (8, 6)
+    return float(figsize[0]), float(figsize[1])
 
-    # 3. Estimate grid count
-    n_lat = lat_range / resolution
-    n_lon = lon_range / resolution
-    grid_count = np.sqrt(n_lat * n_lon)
 
-    # 4. Skip based on grid count
-    skip_factor = cfg.quiver.get("skipfactor", 30)
-    skip = max(1, int(grid_count / skip_factor))
+def _is_landscape(cfg):
+    """Wide domains (indonesia, java, malacca) whose width dominates the height."""
+    fig_w, fig_h = _figure_size(cfg)
+    threshold = float(cfg.quiver.get("landscape_aspect", 1.5))
+    return (fig_w / max(fig_h, 1e-6)) >= threshold
 
-    # 5. Geometric correction of area
-    lat_mid = float((lat.max() + lat.min()) / 2)
-    effective_area = lat_range * lon_range * np.cos(np.deg2rad(lat_mid))
-    effective_area = max(effective_area, 1e-6)
 
-    # 6. Scale
-    scale_factor = cfg.quiver.get("scalefactor", 40)
-    scale = scale_factor / np.sqrt(effective_area)
+def compute_vector_skip(lat, lon, cfg):
+    """Skip for ~per_inch arrows along each figure edge (screen-consistent density).
 
-    # 7. Stabilize scale to realistic limits
-    scale = float(np.clip(scale, 60, 200))
+    Portrait / near-square maps pack arrows denser; wide landscape maps keep a
+    looser spacing so the longer edge doesn't turn into a wall of arrows.
+    """
+    method = get_vector_method(cfg)
+    section = cfg.windbarb if method == "windbarb" else cfg.quiver
+    if section.get("skip") is not None:
+        return int(section["skip"])
 
-    return skip, scale
+    if _is_landscape(cfg):
+        per_inch = float(section.get("per_inch_landscape", section.get("per_inch", 1.9)))
+    else:
+        per_inch = float(section.get("per_inch_portrait", section.get("per_inch", 2.6)))
+    n_lat, n_lon = _grid_shape(lat, lon)
+    fig_w, fig_h = _figure_size(cfg)
+    target_x = max(8.0, fig_w * per_inch)
+    target_y = max(8.0, fig_h * per_inch)
+    return max(1, int(round(max(n_lon / target_x, n_lat / target_y))))
+
+
+def get_vector_method(cfg):
+    plot = getattr(cfg, "plot", None) or {}
+    vector = plot.get("vector", {}) if isinstance(plot, dict) else {}
+    return vector.get("method", "quiver")
+
+
+def plot_vectors(ax, lon, lat, u, v, cfg, *, direction_only=False):
+    """
+    Plot vector field using quiver or windbarb based on product config.
+    Returns the matplotlib artist (quiver or barbs) or None.
+    """
+    import cartopy.crs as ccrs
+
+    method = get_vector_method(cfg)
+    if method in (None, "none"):
+        return None
+
+    u_np = np.asarray(u)
+    v_np = np.asarray(v)
+    skip = compute_vector_skip(lat, lon, cfg)
+
+    if method == "windbarb":
+        # Barbs on wide landscape maps get the longer edge as reference so they
+        # stay large; portrait maps track the shorter side for a tighter look.
+        fig_w, fig_h = _figure_size(cfg)
+        base = float(cfg.windbarb.get("length", 5.0))
+        ref = max(fig_w, fig_h) if _is_landscape(cfg) else min(fig_w, fig_h)
+        length = float(np.clip(base * (ref / 8.0), 4.5, 8.0))
+        barb_kwargs = dict(
+            transform=ccrs.PlateCarree(),
+            length=length,
+            barbcolor=cfg.windbarb.get("barbcolor", "black"),
+            linewidth=cfg.windbarb.get("linewidth", 0.5),
+            pivot=cfg.windbarb.get("pivot", "middle"),
+            fill_empty=cfg.windbarb.get("fill_empty", False),
+            zorder=4,
+        )
+        sizes = cfg.windbarb.get("sizes")
+        if sizes is not None:
+            barb_kwargs["sizes"] = sizes
+        return ax.barbs(
+            lon[::skip],
+            lat[::skip],
+            u_np[::skip, ::skip],
+            v_np[::skip, ::skip],
+            **barb_kwargs,
+        )
+
+    mag = np.sqrt(u_np ** 2 + v_np ** 2)
+    safe_mag = np.where(mag > 0, mag, 1.0)
+
+    quiver_kwargs = dict(
+        transform=ccrs.PlateCarree(),
+        width=cfg.quiver.get("width"),
+        headwidth=cfg.quiver.get("headwidth"),
+        headlength=cfg.quiver.get("headlength"),
+        headaxislength=cfg.quiver.get("headaxislength"),
+        minlength=cfg.quiver.get("minlength"),
+        minshaft=cfg.quiver.get("minshaft"),
+        pivot=cfg.quiver.get("pivot"),
+        color=cfg.quiver.get("color", "black"),
+        zorder=4,
+    )
+
+    if direction_only:
+        # Screen-consistent size: arrow length = arrow_frac × shorter projected side.
+        # Cartopy keeps eastward/northward magnitude, so scale_units='xy' + scale=1
+        # makes the displacement equal that magnitude in projection metres.
+        if cfg.quiver.get("scale") is not None:
+            # Explicit override keeps legacy data-unit scaling.
+            u_plot = u_np / safe_mag
+            v_plot = v_np / safe_mag
+            quiver_kwargs["scale"] = float(cfg.quiver["scale"])
+            if cfg.quiver.get("scale_units"):
+                quiver_kwargs["scale_units"] = cfg.quiver["scale_units"]
+        else:
+            x0, x1 = ax.get_xlim()
+            y0, y1 = ax.get_ylim()
+            shorter = max(min(abs(x1 - x0), abs(y1 - y0)), 1e-6)
+            if _is_landscape(cfg):
+                # Wide maps have a short vertical span, so bump the fraction to
+                # keep arrows physically large.
+                arrow_frac = float(cfg.quiver.get("arrow_frac_landscape", 0.050))
+            else:
+                arrow_frac = float(cfg.quiver.get("arrow_frac", 0.024))
+            target = arrow_frac * shorter
+            u_plot = (u_np / safe_mag) * target
+            v_plot = (v_np / safe_mag) * target
+            quiver_kwargs["scale"] = 1.0
+            quiver_kwargs["scale_units"] = "xy"
+            quiver_kwargs["angles"] = "xy"
+    else:
+        u_plot = u_np
+        v_plot = v_np
+        if cfg.quiver.get("scale") is not None:
+            quiver_kwargs["scale"] = float(cfg.quiver["scale"])
+        if cfg.quiver.get("scale_units"):
+            quiver_kwargs["scale_units"] = cfg.quiver["scale_units"]
+
+    return ax.quiver(
+        lon[::skip],
+        lat[::skip],
+        u_plot[::skip, ::skip],
+        v_plot[::skip, ::skip],
+        **quiver_kwargs,
+    )

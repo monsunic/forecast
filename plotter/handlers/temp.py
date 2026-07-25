@@ -1,6 +1,7 @@
 from ..core.utils import load_model_params, select_bbox, select_time, select_level
 from ..core.base_handler import BaseHandler
-import cartopy.crs as ccrs
+from ..core.scalar_plot import plot_scalar_field
+
 
 class TempHandler(BaseHandler):
     def load(self, ds):
@@ -13,9 +14,5 @@ class TempHandler(BaseHandler):
         return dset
 
     def plot(self, ax, tmp):
-        return ax.pcolormesh(
-            tmp.lon, tmp.lat, tmp,
-            cmap=self.config.cmap,
-            shading="auto",
-            transform=ccrs.PlateCarree(),
-        )
+        im = plot_scalar_field(ax, tmp.lon, tmp.lat, tmp, self.config)
+        return im, None

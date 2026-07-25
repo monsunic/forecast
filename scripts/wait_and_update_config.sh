@@ -13,7 +13,16 @@ while kill -0 "$PID" 2>/dev/null; do
     sleep 30
 done
 
-MAX_HOURS="${MAX_HOURS:-4}"
+default_max_hours() {
+    python3 -c "
+import sys
+sys.path.insert(0, '${ROOT}')
+from plotter.core.config_loader import get_default_max_hours
+print(get_default_max_hours())
+"
+}
+
+MAX_HOURS="${MAX_HOURS:-$(default_max_hours)}"
 
 echo "[INFO] Plot finished. Regenerating config..."
 if [ -n "$CYCLE" ]; then

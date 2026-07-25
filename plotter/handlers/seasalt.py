@@ -1,6 +1,7 @@
 from ..core.base_handler import BaseHandler
 from ..core.utils import load_model_params, select_time, select_depth, select_bbox
-import cartopy.crs as ccrs
+from ..core.scalar_plot import plot_scalar_field
+
 
 class SeasaltHandler(BaseHandler):
     def load(self, ds):
@@ -13,9 +14,5 @@ class SeasaltHandler(BaseHandler):
         return dset
 
     def plot(self, ax, sss):
-        return ax.pcolormesh(
-            sss.lon, sss.lat, sss,
-            cmap=self.config.cmap,
-            shading="auto",
-            transform=ccrs.PlateCarree(),
-        )
+        im = plot_scalar_field(ax, sss.lon, sss.lat, sss, self.config)
+        return im, None
