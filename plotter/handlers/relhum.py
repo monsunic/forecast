@@ -1,6 +1,6 @@
 from ..core.base_handler import BaseHandler
 from ..core.utils import load_model_params, select_time, select_level, select_bbox
-from ..core.scalar_plot import plot_scalar_field
+from ..core.scalar_plot import plot_scalar_field, overlay_contour_lines
 
 
 class RelhumHandler(BaseHandler):
@@ -12,7 +12,8 @@ class RelhumHandler(BaseHandler):
         dset = select_level(dset, self.config)
         dset = select_bbox(dset, self.config)
         return dset
-    
+
     def plot(self, ax, rh):
         im = plot_scalar_field(ax, rh.lon, rh.lat, rh, self.config)
+        overlay_contour_lines(ax, rh.lon, rh.lat, rh, self.config)
         return im, None

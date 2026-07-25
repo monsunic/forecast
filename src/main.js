@@ -60,6 +60,7 @@
     const prevBtn = document.getElementById('prevBtn');
     const playBtn = document.getElementById('playBtn');
     const nextBtn = document.getElementById('nextBtn');
+    const timeline = document.getElementById('timeline');
     const overlay = document.getElementById('regionOverlay');
     const regionHighlight = document.getElementById('regionHighlight');
     const regionLabel = document.getElementById('regionLabel');
@@ -76,6 +77,7 @@
         sst: 'seatemp',
         sss: 'seasalt',
         ssh: 'ssh',
+        current: 'seacurrent',
     };
 
     // Human-readable dropdown labels (from docs/PRODUCT_CATALOG.md display names)
@@ -87,9 +89,10 @@
         rh: 'Surface Relative Humidity',
         mslp_wind: 'Surface Wind + MSLP',
         rain_rh700: 'Rainfall + 700 hPa Humidity',
-        sst: 'Sea Temperature',
-        sss: 'Sea Salinity',
+        sst: 'Surface Sea Temperature',
+        sss: 'Surface Sea Salinity',
         ssh: 'Sea Surface Height',
+        current: 'Surface Sea Current',
     };
 
     // Forecast-type category each parameter belongs to (grouped by dataset family)
@@ -104,6 +107,7 @@
         sst: 'Ocean',
         sss: 'Ocean',
         ssh: 'Ocean',
+        current: 'Ocean',
     };
 
     const CATEGORY_ORDER = ['Wind and Waves', 'Atmosphere', 'Ocean'];
@@ -112,7 +116,7 @@
     const PARAM_ORDER = {
         'Wind and Waves': ['surface_wind', 'swh', 'swell'],
         Atmosphere: ['rain_rh700', 'mslp_wind', 'sfc_temp', 'rh'],
-        Ocean: ['sst', 'sss', 'ssh'],
+        Ocean: ['sst', 'sss', 'current', 'ssh'],
     };
 
     const MODEL_DATASET = {
@@ -320,41 +324,54 @@
         return m ? m[1].padStart(3, '0') : null;
     }
 
-    function formatTimeLabel(fLabel) {
+    const MONTHS = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // Resolve an "F###" label into its lead hour and (when the cycle is known)
+    // the UTC valid time of that frame.
+    function validTimeInfo(fLabel) {
         const m = /^F(\d+)$/.exec(fLabel || '');
-        if (!m) return fLabel;
+        if (!m) return null;
         const fh = parseInt(m[1], 10);
+        const meta = forecastMeta();
         const cycle =
-            forecastMeta()?.cycle ||
-            CONFIG?.cycles?.[forecastMeta()?.dataset] ||
+            meta?.cycle ||
+            CONFIG?.cycles?.[meta?.dataset] ||
             CONFIG?.cycle ||
             CONFIG?.updated;
-        if (cycle && /^\d{10}$/.test(String(cycle))) {
-            const c = String(cycle);
-            const valid = new Date(Date.UTC(
-                +c.slice(0, 4),
-                +c.slice(4, 6) - 1,
-                +c.slice(6, 8),
-                +c.slice(8, 10) + fh
-            ));
-            const months = [
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December',
-            ];
-            const month = months[valid.getUTCMonth()];
-            const day = valid.getUTCDate();
-            const year = valid.getUTCFullYear();
-            const hh = String(valid.getUTCHours()).padStart(2, '0');
-            const mm = String(valid.getUTCMinutes()).padStart(2, '0');
-            return `${month} ${day}, ${year} at ${hh}:${mm} UTC`;
-        }
-        return fh === 0 ? 't+0h (analysis)' : `t+${fh}h`;
+        if (!cycle || !/^\d{10}$/.test(String(cycle))) return { fh, valid: null };
+        const c = String(cycle);
+        const valid = new Date(Date.UTC(
+            +c.slice(0, 4),
+            +c.slice(4, 6) - 1,
+            +c.slice(6, 8),
+            +c.slice(8, 10) + fh
+        ));
+        return { fh, valid };
+    }
+
+    function formatTimeLabel(fLabel) {
+        const info = validTimeInfo(fLabel);
+        if (!info) return fLabel;
+        if (!info.valid) return info.fh === 0 ? 't+0h (analysis)' : `t+${info.fh}h`;
+        const v = info.valid;
+        const hh = String(v.getUTCHours()).padStart(2, '0');
+        const mm = String(v.getUTCMinutes()).padStart(2, '0');
+        return `${MONTHS[v.getUTCMonth()]} ${v.getUTCDate()}, ${v.getUTCFullYear()} at ${hh}:${mm} UTC`;
     }
 
     function relabelTimes() {
         [...timeSelect.options].forEach(opt => {
             if (timeIndexFromLabel(opt.value)) opt.textContent = formatTimeLabel(opt.value);
         });
+    }
+
+    function populateTimes(items, labelFn, preferred) {
+        populate(timeSelect, items, labelFn, preferred);
+        renderTimeline();
     }
 
     function isPlaceholderOption(value) {
@@ -405,6 +422,7 @@
         const dataset = meta.dataset || MODEL_DATASET[model] || 'gfswave';
         pendingMapSrc = mapFrameUrl(dataset, region, paramSlug, timeIndex);
         mapImage.src = pendingMapSrc;
+        syncTimeline();
     }
 
 
@@ -431,7 +449,7 @@
             populate(forecastSelect, ["Type (Select a region first)"]);
             populate(parameterSelect, ["Parameter (Select a region first)"]);
             populate(modelSelect, ["Model (Select a region first)"]);
-            populate(timeSelect, ["Time (Select a region first)"]);
+            populateTimes(["Time (Select a region first)"]);
 
             setRegionOverlayEnabled(true);
             showStaticMap();
@@ -448,7 +466,7 @@
         if (isPlaceholderOption(type)) {
             populate(parameterSelect, ['Parameter (Select type first)']);
             populate(modelSelect, ['Model (Select type first)']);
-            populate(timeSelect, ['Time (Select type first)']);
+            populateTimes(['Time (Select type first)']);
             updateMap();
             return;
         }
@@ -468,7 +486,7 @@
         const meta = forecastMeta();
         if (isPlaceholderOption(forecastSelect.value)) {
             populate(modelSelect, ['Model (Select type first)']);
-            populate(timeSelect, ['Time (Select type first)']);
+            populateTimes(['Time (Select type first)']);
             updateMap();
             return;
         }
@@ -481,7 +499,7 @@
         const meta = forecastMeta();
         const param = parameterSelect.value;
         if (isPlaceholderOption(param)) {
-            populate(timeSelect, ['Time (Select parameter first)']);
+            populateTimes(['Time (Select parameter first)']);
             updateMap();
             return;
         }
@@ -489,8 +507,7 @@
         const times = Array.isArray(paramTimes) && paramTimes.length
             ? paramTimes.filter(t => timeIndexFromLabel(t))
             : (meta.timestamps || []).filter(t => timeIndexFromLabel(t));
-        populate(
-            timeSelect,
+        populateTimes(
             times.length ? times : ['Time (no data)'],
             formatTimeLabel,
             prev?.time
@@ -501,6 +518,91 @@
 
     function validTimeOptions() {
         return [...timeSelect.options].filter(o => timeIndexFromLabel(o.value));
+    }
+
+
+    /* ------------------------------------------------------------
+     * Clickable Time Strip
+     * ------------------------------------------------------------ */
+    function selectTime(value) {
+        const opt = [...timeSelect.options].find(o => o.value === value);
+        if (!opt) return;
+        opt.selected = true;
+        updateMap();
+    }
+
+    // Keep the active tick visible without scrolling the page.
+    function revealTick(tick) {
+        const strip = timeline.getBoundingClientRect();
+        const box = tick.getBoundingClientRect();
+        if (box.left < strip.left + 8) {
+            timeline.scrollLeft += box.left - strip.left - 24;
+        } else if (box.right > strip.right - 8) {
+            timeline.scrollLeft += box.right - strip.right + 24;
+        }
+    }
+
+    function syncTimeline() {
+        if (!timeline) return;
+        const current = timeSelect.value;
+        let active = null;
+        timeline.querySelectorAll('.tl-tick').forEach(tick => {
+            const on = tick.dataset.value === current;
+            tick.classList.toggle('active', on);
+            tick.setAttribute('aria-pressed', on ? 'true' : 'false');
+            if (on) active = tick;
+        });
+        if (active) revealTick(active);
+    }
+
+    // One tick per forecast hour, grouped under the day it is valid for.
+    function renderTimeline() {
+        if (!timeline) return;
+        timeline.innerHTML = '';
+        const opts = validTimeOptions();
+        timeline.classList.toggle('is-empty', opts.length <= 1);
+        if (opts.length <= 1) return;
+
+        let dayKey = null;
+        let hoursEl = null;
+
+        opts.forEach(opt => {
+            const info = validTimeInfo(opt.value);
+            const v = info?.valid || null;
+            const key = v ? v.toISOString().slice(0, 10) : 'lead';
+
+            if (key !== dayKey) {
+                dayKey = key;
+                const group = document.createElement('div');
+                group.className = 'tl-day';
+
+                const label = document.createElement('span');
+                label.className = 'tl-day-label';
+                label.textContent = v
+                    ? `${WEEKDAYS_SHORT[v.getUTCDay()]} ${v.getUTCDate()} ${MONTHS[v.getUTCMonth()].slice(0, 3)} UTC`
+                    : 'Lead time';
+
+                hoursEl = document.createElement('div');
+                hoursEl.className = 'tl-hours';
+
+                group.append(label, hoursEl);
+                timeline.appendChild(group);
+            }
+
+            const tick = document.createElement('button');
+            tick.type = 'button';
+            tick.className = 'tl-tick';
+            tick.dataset.value = opt.value;
+            tick.textContent = v
+                ? `${String(v.getUTCHours()).padStart(2, '0')}h`
+                : `+${info.fh}h`;
+            tick.title = formatTimeLabel(opt.value);
+            tick.setAttribute('aria-label', tick.title);
+            tick.addEventListener('click', () => selectTime(opt.value));
+            hoursEl.appendChild(tick);
+        });
+
+        syncTimeline();
     }
 
     function stepTime(delta) {

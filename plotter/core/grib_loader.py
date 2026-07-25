@@ -249,10 +249,12 @@ def load_gfsatmos_forecast(cycle: str, forecast_hour: int, cache: bool = True) -
     return normalize_gfsatmos_dataset(raw)
 
 
-def load_gfswave_cycle(cycle: str, max_hours: int) -> xr.Dataset:
-    """Load consecutive hourly forecasts into a single dataset with time dimension."""
+def load_gfswave_cycle(cycle: str, max_hours: int, hour_step: int = 1) -> xr.Dataset:
+    """Load consecutive forecasts into a single dataset with time dimension."""
+    from plotter.core.config_loader import get_forecast_hours
+
     datasets = []
-    for t in range(max_hours):
+    for t in get_forecast_hours(max_hours=max_hours, hour_step=hour_step):
         try:
             ds = load_gfswave_forecast(cycle, t)
             datasets.append(ds)
@@ -266,10 +268,12 @@ def load_gfswave_cycle(cycle: str, max_hours: int) -> xr.Dataset:
     return xr.concat(datasets, dim="time")
 
 
-def load_gfsatmos_cycle(cycle: str, max_hours: int) -> xr.Dataset:
-    """Load consecutive hourly GFS Atmosphere forecasts into one dataset."""
+def load_gfsatmos_cycle(cycle: str, max_hours: int, hour_step: int = 1) -> xr.Dataset:
+    """Load consecutive GFS Atmosphere forecasts into one dataset."""
+    from plotter.core.config_loader import get_forecast_hours
+
     datasets = []
-    for t in range(max_hours):
+    for t in get_forecast_hours(max_hours=max_hours, hour_step=hour_step):
         try:
             ds = load_gfsatmos_forecast(cycle, t)
             datasets.append(ds)

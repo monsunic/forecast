@@ -1,6 +1,6 @@
 from ..core.utils import load_model_params, select_bbox, select_time, select_level
 from ..core.base_handler import BaseHandler
-from ..core.scalar_plot import plot_scalar_field
+from ..core.scalar_plot import plot_scalar_field, overlay_contour_lines
 
 
 class TempHandler(BaseHandler):
@@ -15,4 +15,5 @@ class TempHandler(BaseHandler):
 
     def plot(self, ax, tmp):
         im = plot_scalar_field(ax, tmp.lon, tmp.lat, tmp, self.config)
+        overlay_contour_lines(ax, tmp.lon, tmp.lat, tmp, self.config)
         return im, None

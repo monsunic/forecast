@@ -26,14 +26,17 @@ class SeacurrentHandler(BaseHandler):
 
     def plot(self, ax, data):
         u, v = data
-        mag = np.sqrt(u.values ** 2 + v.values ** 2)
+        scale = float(getattr(self.config, "scale", 1.0))
+        u_np = u.values * scale
+        v_np = v.values * scale
+        mag = np.sqrt(u_np ** 2 + v_np ** 2)
         im = plot_scalar_field(ax, u.lon, u.lat, mag, self.config)
         iq = plot_vectors(
             ax,
             u.lon.values,
             u.lat.values,
-            u.values,
-            v.values,
+            u_np,
+            v_np,
             self.config,
             direction_only=True,
         )

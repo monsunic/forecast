@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nusawave Forecast</title>
   <link rel="icon" href="assets/icons/nusawave-forecast-logo.png" type="image/png" />
-  <link rel="stylesheet" href="src/style.css" />
+  <link rel="stylesheet" href="src/style.css?v=20260725-timeline" />
 </head>
 
 <body>
@@ -84,9 +84,12 @@
           <button type="button" id="overviewBtn" class="overview-btn">Overview map</button>
 
           <div class="timectrl-top">
-            <button id="prevBtn">⬅️</button>
-            <button id="playBtn">▶️</button>
-            <button id="nextBtn">➡️</button>
+            <div class="timectrl-btns">
+              <button id="prevBtn">⬅️</button>
+              <button id="playBtn">▶️</button>
+              <button id="nextBtn">➡️</button>
+            </div>
+            <div class="timeline is-empty" id="timeline" role="group" aria-label="Forecast valid time"></div>
           </div>
         </div>
 
@@ -146,7 +149,7 @@
     </main>
   </div>
 
-  <script type="module" src="src/main.js?v=20260725-fit-map"></script>
+  <script type="module" src="src/main.js?v=20260725-timeline"></script>
 </body>
 
 </html>

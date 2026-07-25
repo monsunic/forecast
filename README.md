@@ -35,11 +35,11 @@ python scripts/generate_static_assets.py
 
 ### Run forecast plots manually
 
-Default forecast window is **24 hours** (`forecast.max_hours` in `plotter/config/config.yaml`). Override with `--max-hours` / `MAX_HOURS`.
+Default forecast window is **3 days at 3-hourly** (`forecast.max_hours: 72`, `hour_step: 3` → F000…F072). Override with `--max-hours` / `MAX_HOURS` and `--hour-step` / `HOUR_STEP`.
 
 ```bash
-python src/plot.py --dataset gfswave --cycle 2025120700 --region indonesia --max-hours 24
-python scripts/generate_config.py --dataset gfswave --cycle 2025120700 --max-hours 24
+python src/plot.py --dataset gfswave --cycle 2025120700 --region indonesia --max-hours 72 --hour-step 3
+python scripts/generate_config.py --dataset gfswave --cycle 2025120700 --max-hours 72 --hour-step 3
 ```
 
 Or use the batch script (auto-selects latest available GFS cycle):

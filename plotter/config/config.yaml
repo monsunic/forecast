@@ -33,8 +33,10 @@ regions:
 # FORECAST RUN SETTINGS
 # ========================================================
 forecast:
-  # Hourly window F000 … F{max_hours-1}. Override via --max-hours / MAX_HOURS.
-  max_hours: 24
+  # Lead-time window: F000 … F{max_hours} at hour_step (inclusive).
+  # Default: 3-day forecast at 3-hourly (F000, F003, …, F072).
+  max_hours: 72
+  hour_step: 3
 
 # ========================================================
 # GLOBAL FALLBACK DEFAULTS
@@ -257,7 +259,7 @@ products:
     status: ready
     plot:
       scalar:
-        method: pcolormesh
+        method: contourf
         colormap_type: discrete
       vector:
         method: none
@@ -276,7 +278,7 @@ products:
     status: ready
     plot:
       scalar:
-        method: pcolormesh
+        method: contourf
         colormap_type: discrete
       vector:
         method: none
@@ -288,7 +290,7 @@ products:
 
   seacurrent:
     slug: seacurrent
-    ui_key: null
+    ui_key: current
     dataset: hycom
     model: HYCOM
     forecast_type: "Ocean"
@@ -304,6 +306,10 @@ products:
         enabled: true
         orientation: horizontal
         extend: max
+    # Denser than wind/wave quivers — HYCOM's fine grid still skips heavily.
+    quiver:
+      per_inch_landscape: 3.6
+      per_inch_portrait: 4.8
 
   ssh:
     slug: ssh
@@ -388,6 +394,11 @@ variables:
     palette: nusawave_temp
     levels: [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36]
     extend: both
+    contour:
+      linewidth: 0.35
+      colors: "#0B2340"
+      alpha: 0.5
+      label_stride: 2
   
   relhum:
     var2display: "Surface Relative Humidity"
@@ -395,6 +406,12 @@ variables:
     cbrlabel: "Surface Relative Humidity"
     palette: nusawave_rh
     levels: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    contour:
+      linewidth: 0.4
+      colors: "#0B2340"
+      alpha: 0.55
+      label_stride: 2
+      label_fmt: "%d"
 
   wind:
     var2display: "Surface Wind Speed and Direction"
@@ -426,29 +443,42 @@ variables:
     extend: max
 
   seacurrent:
-    var2display: "Sea Current and Direction"
+    var2display: "Surface Sea Current and Direction"
     unit: "cm/s"
-    cbrlabel: "Sea Current Speed and Direction"
+    # HYCOM u/v are m/s; multiply by scale for colorbar/levels in cm/s.
+    scale: 100.0
+    cbrlabel: "Surface Sea Current"
     arrlabel: "Current Direction"
     palette: nusawave_current
     levels: [0, 5, 10, 20, 30, 45, 60, 80, 100, 150, 200, 300, 400]
     extend: max
 
   seatemp:
-    var2display: "Sea Temperature"
+    var2display: "Surface Sea Temperature"
     unit: "degC"
-    cbrlabel: "Sea Temperature"
+    cbrlabel: "Surface Sea Temperature"
     palette: nusawave_sst
     levels: [16, 18, 20, 22, 24, 26, 26.5, 27, 27.5, 28, 28.5, 29, 29.5, 30, 30.5, 31, 31.5, 32, 34, 36]
     extend: both
+    contour:
+      linewidth: 0.35
+      colors: "#0B2340"
+      alpha: 0.5
+      label_stride: 2
   
   seasalt:
-    var2display: "Sea Salinity"
+    var2display: "Surface Sea Salinity"
     unit: "PSU"
-    cbrlabel: "Sea Salinity"
+    cbrlabel: "Surface Sea Salinity"
     palette: nusawave_salinity
     levels: [30, 30.5, 31, 31.5, 32, 32.5, 33, 33.5, 34, 34.5, 35, 35.5, 36]
     extend: both
+    contour:
+      linewidth: 0.4
+      colors: "#0B2340"
+      alpha: 0.55
+      label_stride: 2
+      label_fmt: "%g"
 
   ssh:
     var2display: "Sea Surface Height"

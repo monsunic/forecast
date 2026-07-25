@@ -58,18 +58,105 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, '
     width: 100%;
     flex: 1 0 100%;
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     margin: 12px 0;
 }
 
-.timectrl-top button {
+.timectrl-btns {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 0 0 auto;
+}
+
+.timectrl-btns button {
     padding: 8px 12px;
     border-radius: 8px;
     border: 1px solid #dfeaf7;
     background: white;
     cursor: pointer;
+}
+
+/* Clickable forecast time strip */
+.timeline {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 5px 8px 7px;
+    border: 1px solid #dfeaf7;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #fbfdff, #f3f8ff);
+    scrollbar-width: thin;
+}
+
+.timeline.is-empty {
+    display: none;
+}
+
+.tl-day {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 10px;
+    border-right: 1px dashed #d8e5f5;
+}
+
+.tl-day:last-child {
+    padding-right: 0;
+    border-right: 0;
+}
+
+.tl-day-label {
+    padding-left: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #5b7899;
+    white-space: nowrap;
+}
+
+.tl-hours {
+    display: flex;
+    gap: 4px;
+}
+
+.tl-tick {
+    flex: 0 0 auto;
+    min-width: 40px;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: white;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    cursor: pointer;
+}
+
+.tl-tick:hover {
+    background: #eaf3ff;
+    border-color: #cfe0f5;
+}
+
+.tl-tick.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+.tl-tick:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 /* outer container: sized by fitMapToViewport() to the image + padding */
@@ -201,6 +288,9 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, '
 .menu{flex-direction:column}
 .controls{flex-direction:column;align-items:stretch}
 .timectrl{margin-left:0}
+.timectrl-top{flex-direction:column;align-items:stretch;gap:10px}
+.timectrl-btns{justify-content:center}
+.timeline{width:100%}
 .controls select{
     min-width:100%;
     max-width:100%;

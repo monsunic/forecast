@@ -22,13 +22,23 @@ print(get_default_max_hours())
 "
 }
 
+default_hour_step() {
+    python3 -c "
+import sys
+sys.path.insert(0, '${ROOT}')
+from plotter.core.config_loader import get_hour_step
+print(get_hour_step())
+"
+}
+
 MAX_HOURS="${MAX_HOURS:-$(default_max_hours)}"
+HOUR_STEP="${HOUR_STEP:-$(default_hour_step)}"
 
 echo "[INFO] Plot finished. Regenerating config..."
 if [ -n "$CYCLE" ]; then
-    python3 scripts/generate_config.py --cycle "$CYCLE" --max-hours "$MAX_HOURS"
+    python3 scripts/generate_config.py --cycle "$CYCLE" --max-hours "$MAX_HOURS" --hour-step "$HOUR_STEP"
 else
-    python3 scripts/generate_config.py --max-hours "$MAX_HOURS"
+    python3 scripts/generate_config.py --max-hours "$MAX_HOURS" --hour-step "$HOUR_STEP"
 fi
 
 echo "[INFO] Config updated."

@@ -42,6 +42,7 @@ def test_build_config_merges_wave_and_atmosphere(tmp_path, monkeypatch):
         datasets=["gfswave", "gfsatmos"],
         cycles={"gfswave": "2026072500", "gfsatmos": "2026072506"},
         max_hours=4,
+        hour_step=1,
     )
 
     region = config["regions"]["malacca_strait"]["forecast_types"]
@@ -70,10 +71,34 @@ def test_build_config_skips_empty_params(tmp_path, monkeypatch):
     # Only wind frames — swh/swell absent → omitted from parameters.
     _write_maps(maps, "gfswave", "indonesia", {"wind": ["000", "001"]})
 
-    config = gc.build_config(datasets=["gfswave"], cycles="2026072500", max_hours=4)
+    config = gc.build_config(
+        datasets=["gfswave"], cycles="2026072500", max_hours=4, hour_step=1
+    )
     params = config["regions"]["indonesia"]["forecast_types"]["Wind and Waves"]["parameters"]
     assert list(params.keys()) == ["surface_wind"]
     assert params["surface_wind"] == ["F000", "F001"]
+
+
+def test_build_config_three_hourly(tmp_path, monkeypatch):
+    import scripts.generate_config as gc
+
+    maps = tmp_path / "maps"
+    monkeypatch.setattr(gc, "MAPS_ROOT", maps)
+
+    hours = ["000", "003", "006", "009", "012"]
+    _write_maps(
+        maps,
+        "gfswave",
+        "indonesia",
+        {"wind": hours, "swh": hours, "swell": hours},
+    )
+
+    config = gc.build_config(
+        datasets=["gfswave"], cycles="2026072500", max_hours=12, hour_step=3
+    )
+    waves = config["regions"]["indonesia"]["forecast_types"]["Wind and Waves"]
+    assert waves["timestamps"] == ["F000", "F003", "F006", "F009", "F012"]
+    assert waves["parameters"]["surface_wind"] == ["F000", "F003", "F006", "F009", "F012"]
 
 
 def test_build_config_preserves_wave_when_only_atmos_regenerated(tmp_path, monkeypatch):
@@ -100,6 +125,7 @@ def test_build_config_preserves_wave_when_only_atmos_regenerated(tmp_path, monke
         datasets=["gfswave", "gfsatmos"],
         cycles={"gfswave": "2026072500", "gfsatmos": "2026072500"},
         max_hours=4,
+        hour_step=1,
     )
     ftypes = config["regions"]["philippines"]["forecast_types"]
     assert "Wind and Waves" in ftypes

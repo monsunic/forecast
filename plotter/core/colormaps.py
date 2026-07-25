@@ -68,10 +68,11 @@ NUSAWAVE_PALETTES: dict[str, list[str]] = {
         NW_CORAL, "#FB7185", NW_RED, "#BE123C", "#881337", "#4C0519",
         NW_NAVY,
     ],
-    # Sea salinity (PSU)
+    # Sea salinity (PSU) — light ice → sky → teal → soft blue → gold (no near-black)
     "nusawave_salinity": [
-        NW_ICE, "#BAE6FD", NW_SKY, NW_CYAN, NW_TEAL, NW_BLUE,
-        "#1D4ED8", "#1E3A8A", NW_NAVY, "#0F172A", "#020617", "#000000",
+        "#F0F9FF", "#E0F2FE", "#BAE6FD", "#7DD3FC", "#38BDF8",
+        "#22D3EE", "#2DD4BF", "#34D399", "#A3E635", "#FDE047",
+        "#FBBF24", "#FB923C", "#F87171",
     ],
     # Sea surface height anomaly (m) — diverging
     "nusawave_ssh": [

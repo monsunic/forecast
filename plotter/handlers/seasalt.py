@@ -1,6 +1,6 @@
 from ..core.base_handler import BaseHandler
 from ..core.utils import load_model_params, select_time, select_depth, select_bbox
-from ..core.scalar_plot import plot_scalar_field
+from ..core.scalar_plot import plot_scalar_field, overlay_contour_lines
 
 
 class SeasaltHandler(BaseHandler):
@@ -15,4 +15,5 @@ class SeasaltHandler(BaseHandler):
 
     def plot(self, ax, sss):
         im = plot_scalar_field(ax, sss.lon, sss.lat, sss, self.config)
+        overlay_contour_lines(ax, sss.lon, sss.lat, sss, self.config)
         return im, None

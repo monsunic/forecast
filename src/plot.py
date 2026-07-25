@@ -15,15 +15,22 @@ if str(ROOT) not in sys.path:
 
 from plotter.core.plotter import Plotter
 from plotter.core.plot_config import PlotConfig
-from plotter.core.config_loader import get_default_max_hours, load_param_config
+from plotter.core.config_loader import (
+    get_default_max_hours,
+    get_forecast_hours,
+    get_hour_step,
+    load_param_config,
+)
 from plotter.core.map_assets import clear_param_maps, verify_param_maps
 from plotter.core.utils import get_dataset_url, load_model_params
 
 GFSWAVE_PARAMS = ("wind", "swh", "swell")
 GFSATMOS_PARAMS = ("temp", "relhum", "mslp_wind", "rain_rh700")
+HYCOM_PARAMS = ("seatemp", "seasalt", "seacurrent")
 DATASET_PARAMS = {
     "gfswave": GFSWAVE_PARAMS,
     "gfsatmos": GFSATMOS_PARAMS,
+    "hycom": HYCOM_PARAMS,
 }
 
 
@@ -36,11 +43,18 @@ def parse_args():
     )
     parser.add_argument("--cycle", required=True, help="YYYYMMDDHH model cycle")
     default_hours = get_default_max_hours()
+    default_step = get_hour_step()
     parser.add_argument(
         "--max-hours",
         type=int,
         default=default_hours,
-        help=f"Forecast length in hours (default: {default_hours} from config.yaml)",
+        help=f"Last forecast lead time in hours (default: {default_hours} from config.yaml)",
+    )
+    parser.add_argument(
+        "--hour-step",
+        type=int,
+        default=default_step,
+        help=f"Lead-time step in hours (default: {default_step} from config.yaml)",
     )
     parser.add_argument(
         "--MAXFORECAST",
@@ -60,6 +74,14 @@ def params_for_dataset(dataset):
     return [p for p in mapper.keys() if p not in skip]
 
 
+def _plot_kwargs(yaml_defaults, yaml_param):
+    """Merge defaults + variable settings without duplicate nested kwargs."""
+    defaults = {
+        k: v for k, v in yaml_defaults.items() if k not in ("quiver", "windbarb")
+    }
+    return {**defaults, **yaml_param}
+
+
 def main():
     args = parse_args()
     baserun = datetime.strptime(args.cycle, "%Y%m%d%H")
@@ -67,7 +89,13 @@ def main():
     url = get_dataset_url(args.dataset, args.cycle)
     print(f"[INFO] Loading dataset: {url}")
 
-    max_t = args.MAXFORECAST * 24 if args.MAXFORECAST is not None else args.max_hours
+    max_lead = args.MAXFORECAST * 24 if args.MAXFORECAST is not None else args.max_hours
+    hour_step = args.hour_step
+    forecast_hours = get_forecast_hours(max_hours=max_lead, hour_step=hour_step)
+    print(
+        f"[INFO] Forecast hours ({len(forecast_hours)}): "
+        f"F{forecast_hours[0]:03d} … F{forecast_hours[-1]:03d} step {hour_step}h"
+    )
 
     yaml_cfg = load_param_config()
     yaml_defaults = yaml_cfg.get("defaults", {})
@@ -80,16 +108,20 @@ def main():
 
     maps_root = ROOT / "assets" / "maps" / args.dataset
     plot_params = [p for p in params if p in yaml_params]
-    clear_param_maps(maps_root, regions, plot_params, max_hours=max_t)
+    clear_param_maps(
+        maps_root, regions, plot_params, forecast_hours=forecast_hours, purge_beyond=True
+    )
 
-    if args.dataset in ("gfswave", "gfsatmos"):
+    if args.dataset in ("gfswave", "gfsatmos", "hycom"):
         if args.dataset == "gfswave":
             from plotter.core.grib_loader import load_gfswave_forecast as load_forecast
-        else:
+        elif args.dataset == "gfsatmos":
             from plotter.core.grib_loader import load_gfsatmos_forecast as load_forecast
+        else:
+            from plotter.core.hycom_loader import load_hycom_forecast as load_forecast
 
-        hours_completed = 0
-        for t in range(max_t):
+        hours_done = []
+        for t in forecast_hours:
             try:
                 ds = load_forecast(args.cycle, t)
             except Exception as exc:
@@ -108,9 +140,12 @@ def main():
                         time_index=None,
                         time_value=pd.Timestamp(tforecast),
                         forecast_hour=t,
-                        **yaml_defaults,
-                        **yaml_params[param],
+                        **_plot_kwargs(yaml_defaults, yaml_params[param]),
                     )
+                    if "quiver" in yaml_defaults:
+                        cfg.quiver.update(yaml_defaults["quiver"])
+                    if "windbarb" in yaml_defaults:
+                        cfg.windbarb.update(yaml_defaults["windbarb"])
 
                     cfg.outfile = str(maps_root / region / f"{param}_{t:03d}")
                     cfg.baserun = baserun
@@ -118,21 +153,25 @@ def main():
 
                     plotter = Plotter(cfg)
                     plotter.plot_map(ds, param)
-            hours_completed = t + 1
+            hours_done.append(t)
 
-        if hours_completed == 0:
+        if not hours_done:
             raise SystemExit("[ERROR] No forecast hours rendered")
-        verify_param_maps(maps_root, regions, plot_params, hours_completed)
-        print(f"[INFO] Rendered {hours_completed} hour(s) × {len(regions)} region(s)")
+        verify_param_maps(maps_root, regions, plot_params, hours_done)
+        print(
+            f"[INFO] Rendered {len(hours_done)} hour(s) × {len(regions)} region(s) "
+            f"× {len(plot_params)} param(s)"
+        )
         return
 
     import xarray as xr
     ds = xr.open_dataset(url, engine="netcdf4")
-    max_t = min(max_t, ds.dims["time"])
     time_dim = params_load.get("time", "time")
+    n_times = ds.dims[time_dim]
+    hours_done = [t for t in forecast_hours if t < n_times]
 
     for region in regions:
-        for t in range(max_t):
+        for t in hours_done:
             tforecast = pd.to_datetime(ds.isel({time_dim: t})["time"].values)
             for param in plot_params:
                 print(f"[INFO] Plotting {param} for region {region} at t+{t:03d}h")
@@ -143,9 +182,12 @@ def main():
                     time_index=t,
                     time_value=tforecast,
                     forecast_hour=t,
-                    **yaml_defaults,
-                    **yaml_params[param],
+                    **_plot_kwargs(yaml_defaults, yaml_params[param]),
                 )
+                if "quiver" in yaml_defaults:
+                    cfg.quiver.update(yaml_defaults["quiver"])
+                if "windbarb" in yaml_defaults:
+                    cfg.windbarb.update(yaml_defaults["windbarb"])
 
                 cfg.outfile = str(maps_root / region / f"{param}_{t:03d}")
                 cfg.baserun = baserun
@@ -154,8 +196,8 @@ def main():
                 plotter = Plotter(cfg)
                 plotter.plot_map(ds, param)
 
-    verify_param_maps(maps_root, regions, plot_params, max_t)
-    print(f"[INFO] Rendered {max_t} hour(s) × {len(regions)} region(s)")
+    verify_param_maps(maps_root, regions, plot_params, hours_done)
+    print(f"[INFO] Rendered {len(hours_done)} hour(s) × {len(regions)} region(s)")
 
 
 if __name__ == "__main__":

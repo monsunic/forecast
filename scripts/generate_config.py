@@ -16,7 +16,13 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from plotter.core.config_loader import get_default_max_hours, get_products, load_param_config
+from plotter.core.config_loader import (
+    get_default_max_hours,
+    get_forecast_hours,
+    get_hour_step,
+    get_products,
+    load_param_config,
+)
 
 CONFIG_PATH = ROOT / "assets" / "config" / "config.json"
 MAPS_ROOT = ROOT / "assets" / "maps"
@@ -85,11 +91,9 @@ def scan_dataset(dataset_dir: Path):
     return regions
 
 
-def canonical_hours(max_hours: Optional[int] = None):
-    """Fixed forecast window shared by all regions (F000 … F{max-1})."""
-    if max_hours is None:
-        max_hours = get_default_max_hours()
-    return [f"{h:03d}" for h in range(max_hours)]
+def canonical_hours(max_hours: Optional[int] = None, hour_step: Optional[int] = None):
+    """Forecast lead hours as zero-padded strings (e.g. 000, 003, …, 072)."""
+    return [f"{h:03d}" for h in get_forecast_hours(max_hours=max_hours, hour_step=hour_step)]
 
 
 def _datasets_on_disk():
@@ -104,6 +108,7 @@ def build_config(
     datasets=None,
     cycles=None,
     max_hours: Optional[int] = None,
+    hour_step: Optional[int] = None,
 ):
     """Build frontend config for one or more datasets.
 
@@ -115,10 +120,14 @@ def build_config(
     cycles : dict[str, str] | str | None
         Per-dataset cycle (YYYYMMDDHH), or a single cycle applied to all.
     max_hours : int | None
-        Max forecast hour window for F000… labels.
+        Last forecast lead hour (inclusive when hour_step > 1).
+    hour_step : int | None
+        Lead-time stride in hours (default from config.yaml).
     """
     if max_hours is None:
         max_hours = get_default_max_hours()
+    if hour_step is None:
+        hour_step = get_hour_step()
     catalog = product_catalog()
     catalog_by_dataset = {}
     for entry in catalog:
@@ -141,7 +150,7 @@ def build_config(
     elif isinstance(cycles, str):
         cycles = {ds: cycles for ds in datasets}
 
-    canon = canonical_hours(max_hours)
+    canon = canonical_hours(max_hours, hour_step)
     scanned = {ds: scan_dataset(MAPS_ROOT / ds) for ds in datasets}
 
     region_ids = list(ALL_REGIONS)
@@ -264,7 +273,13 @@ def main():
         "--max-hours",
         type=int,
         default=None,
-        help="Forecast hours in config (default: forecast.max_hours from config.yaml)",
+        help="Last forecast lead hour (default: forecast.max_hours from config.yaml)",
+    )
+    parser.add_argument(
+        "--hour-step",
+        type=int,
+        default=None,
+        help="Lead-time step in hours (default: forecast.hour_step from config.yaml)",
     )
     parser.add_argument("--output", default=str(CONFIG_PATH))
     args = parser.parse_args()
@@ -272,6 +287,7 @@ def main():
     # Ensure YAML is readable (also primes catalog).
     load_param_config()
     max_hours = args.max_hours if args.max_hours is not None else get_default_max_hours()
+    hour_step = args.hour_step if args.hour_step is not None else get_hour_step()
 
     cycles = {}
     if args.cycle:
@@ -292,7 +308,12 @@ def main():
         # Fill later once dataset list is resolved.
         pass
 
-    config = build_config(datasets=datasets, cycles=cycles or None, max_hours=max_hours)
+    config = build_config(
+        datasets=datasets,
+        cycles=cycles or None,
+        max_hours=max_hours,
+        hour_step=hour_step,
+    )
 
     # If a global --cycle was given, stamp every forecast_type that lacks one.
     if args.cycle:

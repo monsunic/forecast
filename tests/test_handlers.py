@@ -182,10 +182,21 @@ def test_wind_handler_converts_ms_to_knots():
 
 
 def test_default_max_hours_from_yaml():
-    from plotter.core.config_loader import get_default_max_hours, load_param_config
+    from plotter.core.config_loader import (
+        get_default_max_hours,
+        get_forecast_hours,
+        get_hour_step,
+        load_param_config,
+    )
 
     assert get_default_max_hours() == load_param_config()["forecast"]["max_hours"]
-    assert get_default_max_hours() == 24
+    assert get_default_max_hours() == 72
+    assert get_hour_step() == 3
+    hours = get_forecast_hours()
+    assert hours[0] == 0
+    assert hours[-1] == 72
+    assert hours == list(range(0, 73, 3))
+    assert get_forecast_hours(max_hours=4, hour_step=1) == [0, 1, 2, 3]
 
 
 def test_clear_and_verify_param_maps(tmp_path):
@@ -216,3 +227,26 @@ def test_clear_and_verify_param_maps(tmp_path):
 
     with pytest.raises(SystemExit):
         verify_param_maps(maps_root, [region], ["wind", "swh"], 2)
+
+    (region_dir / "wind_000.webp").write_bytes(b"ok")
+    (region_dir / "wind_003.webp").write_bytes(b"ok")
+    (region_dir / "wind_001.webp").write_bytes(b"stale")
+    # Explicit schedule + purge_beyond clears scheduled frames and off-schedule leftovers.
+    clear_param_maps(
+        maps_root, [region], ["wind"], forecast_hours=[0, 3], purge_beyond=True
+    )
+    assert not list(region_dir.glob("wind_*.webp"))
+
+    (region_dir / "wind_000.webp").write_bytes(b"ok")
+    (region_dir / "wind_003.webp").write_bytes(b"ok")
+    (region_dir / "wind_001.webp").write_bytes(b"stale")
+    clear_param_maps(
+        maps_root, [region], ["wind"], forecast_hours=[0, 3], purge_beyond=False
+    )
+    assert not (region_dir / "wind_000.webp").exists()
+    assert not (region_dir / "wind_003.webp").exists()
+    assert (region_dir / "wind_001.webp").exists()
+
+    (region_dir / "wind_000.webp").write_bytes(b"ok")
+    (region_dir / "wind_003.webp").write_bytes(b"ok")
+    verify_param_maps(maps_root, [region], ["wind"], [0, 3])

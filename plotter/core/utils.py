@@ -117,29 +117,42 @@ def get_dataset_url(dataset, cycle):
         return f"https://example.ecmwf.int/era5_wave_{y}{m}{d}_{h}.nc"
     
     if dataset == "hycom":
-        return f"https://hycom.org/dods/datasets/global_analysis_forecast/{y}{m}{d}.nc"
-    
+        from .hycom_loader import hycom_ncss_url
+        return hycom_ncss_url(cycle, 0)
+
     if dataset == "cmems":
         return f"https://my.cmems-duacs.org/dods/global-analysis-forecast-phy/{y}{m}{d}.nc"
 
     raise ValueError("Unknown dataset source")
 
 
-def open_dataset(dataset, cycle, max_hours=None):
+def open_dataset(dataset, cycle, max_hours=None, hour_step=None):
     """Open a forecast dataset using the appropriate backend."""
+    if hour_step is None:
+        from .config_loader import get_hour_step
+
+        hour_step = get_hour_step()
+
     if dataset == "gfswave":
         from .grib_loader import load_gfswave_cycle, load_gfswave_forecast
         if max_hours is not None and max_hours == 1:
             return load_gfswave_forecast(cycle, 0)
         hours = max_hours or 72
-        return load_gfswave_cycle(cycle, hours)
+        return load_gfswave_cycle(cycle, hours, hour_step=hour_step)
 
     if dataset == "gfsatmos":
         from .grib_loader import load_gfsatmos_cycle, load_gfsatmos_forecast
         if max_hours is not None and max_hours == 1:
             return load_gfsatmos_forecast(cycle, 0)
         hours = max_hours or 72
-        return load_gfsatmos_cycle(cycle, hours)
+        return load_gfsatmos_cycle(cycle, hours, hour_step=hour_step)
+
+    if dataset == "hycom":
+        from .hycom_loader import load_hycom_cycle, load_hycom_forecast
+        if max_hours is not None and max_hours == 1:
+            return load_hycom_forecast(cycle, 0)
+        hours = max_hours or 72
+        return load_hycom_cycle(cycle, hours, hour_step=hour_step)
 
     import xarray as xr
     url = get_dataset_url(dataset, cycle)
