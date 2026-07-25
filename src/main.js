@@ -14,6 +14,9 @@
         buttons.forEach(b =>
             b.classList.toggle('active', b.dataset.section === id)
         );
+        if (id === 'map') {
+            requestAnimationFrame(fitMapToViewport);
+        }
     }
 
     function goToSection(id) {
@@ -118,15 +121,67 @@
     };
 
     const STATIC_MAP = 'assets/maps/staticmap.png';
+    const mapContainer = document.querySelector('.map-container');
+    const mapSection = document.getElementById('map');
 
     let playInterval = null;
     let pendingMapSrc = null;
     let preloadGen = 0;
     const preloadCache = new Set();
+    let fitRaf = 0;
 
     function showStaticMap() {
         pendingMapSrc = null;
         mapImage.src = STATIC_MAP;
+    }
+
+    // Fit the map image inside the visible content area without cropping.
+    // Landscape → limited by width; portrait → limited by available height.
+    function fitMapToViewport() {
+        if (!mapImage || !mapContainer || !mapSection?.classList.contains('active')) {
+            return;
+        }
+
+        const nw = mapImage.naturalWidth;
+        const nh = mapImage.naturalHeight;
+        if (!nw || !nh) return;
+
+        const content = document.querySelector('.content');
+        if (!content) return;
+
+        const contentStyle = getComputedStyle(content);
+        const padX =
+            parseFloat(contentStyle.paddingLeft) +
+            parseFloat(contentStyle.paddingRight);
+        const containerPad = 16; // .map-container padding 8px × 2
+        const availW = Math.max(160, content.clientWidth - padX - containerPad);
+
+        const controls = mapSection.querySelector('.controls');
+        const topEdge = controls
+            ? controls.getBoundingClientRect().bottom
+            : mapSection.getBoundingClientRect().top;
+        const bottomPad = window.innerWidth <= 768 ? 12 : 20;
+        const availH = Math.max(180, window.innerHeight - topEdge - bottomPad - containerPad);
+
+        const scale = Math.min(availW / nw, availH / nh);
+        const dispW = Math.max(1, Math.floor(nw * scale));
+        const dispH = Math.max(1, Math.floor(nh * scale));
+
+        mapImage.style.width = `${dispW}px`;
+        mapImage.style.height = `${dispH}px`;
+        mapImage.width = dispW;
+        mapImage.height = dispH;
+
+        mapContainer.classList.toggle('is-portrait', nh > nw);
+        mapContainer.classList.toggle('is-landscape', nw >= nh);
+    }
+
+    function scheduleFitMap() {
+        if (fitRaf) cancelAnimationFrame(fitRaf);
+        fitRaf = requestAnimationFrame(() => {
+            fitRaf = 0;
+            fitMapToViewport();
+        });
     }
 
     mapImage.addEventListener('error', () => {
@@ -137,13 +192,8 @@
         mapImage.src = STATIC_MAP;
     });
 
-    // Keep width/height attrs in sync so the browser can reserve space accurately.
-    mapImage.addEventListener('load', () => {
-        if (mapImage.naturalWidth > 0) {
-            mapImage.width = mapImage.naturalWidth;
-            mapImage.height = mapImage.naturalHeight;
-        }
-    });
+    mapImage.addEventListener('load', scheduleFitMap);
+    window.addEventListener('resize', scheduleFitMap);
 
     function mapFrameUrl(dataset, region, paramSlug, timeIndex) {
         return `assets/maps/${dataset}/${region}/${paramSlug}_${timeIndex}.webp`;
