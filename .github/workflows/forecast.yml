@@ -7,11 +7,27 @@ on:
   workflow_dispatch:
     inputs:
       cycle:
-        description: 'Model cycle YYYYMMDDHH (optional; auto if empty)'
+        description: 'GFS cycle YYYYMMDDHH (empty = auto-pick latest)'
         required: false
+        default: ''
+        type: string
+      hycom_cycle:
+        description: 'HYCOM cycle YYYYMMDDHH (empty = auto-pick latest)'
+        required: false
+        default: ''
         type: string
       max_forecast:
         description: 'Forecast length in hours (empty = forecast.max_hours from plotter/config/config.yaml)'
+        required: false
+        default: ''
+        type: string
+      hour_step:
+        description: 'Lead-time step in hours (empty = forecast.hour_step from plotter/config/config.yaml)'
+        required: false
+        default: ''
+        type: string
+      datasets:
+        description: 'Datasets to plot, space or comma separated (empty = gfswave gfsatmos hycom)'
         required: false
         default: ''
         type: string
@@ -19,15 +35,26 @@ on:
 permissions:
   contents: write
 
+# A full 3-hourly F000…F072 render across three datasets takes hours. Never let a
+# new cron fire while one is still plotting, or the two runs race on git push.
+concurrency:
+  group: forecast-update
+  cancel-in-progress: false
+
 jobs:
   forecast:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
 
       - name: Install system deps for Cartopy
         run: |
@@ -45,18 +72,39 @@ jobs:
 
       - name: Run forecast pipeline
         env:
-          CYCLE: ${{ github.event.inputs.cycle }}
-          MAX_HOURS: ${{ github.event.inputs.max_forecast }}
+          # Empty on schedule runs, so run_forecast.sh auto-picks cycles and reads
+          # max_hours / hour_step from plotter/config/config.yaml.
+          CYCLE: ${{ github.event.inputs.cycle || '' }}
+          HYCOM_CYCLE: ${{ github.event.inputs.hycom_cycle || '' }}
+          MAX_HOURS: ${{ github.event.inputs.max_forecast || '' }}
+          HOUR_STEP: ${{ github.event.inputs.hour_step || '' }}
+          DATASETS: ${{ github.event.inputs.datasets || '' }}
+          CONTINUE_ON_DATASET_ERROR: '1'
         run: bash scripts/run_forecast.sh
 
       - name: Commit and push updated maps
+        if: always() && !cancelled()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add assets/ docs/PRODUCT_CATALOG.md
           if git diff --staged --quiet; then
             echo "No map changes to commit"
-          else
-            git commit -m "chore: update GFS Wave forecast maps"
-            git push
+            exit 0
           fi
+          git commit -m "chore: update forecast maps (3-hourly)"
+          for attempt in 1 2 3; do
+            echo "::group::Push attempt $attempt"
+            git fetch origin main
+            if git rebase origin/main && git push origin HEAD:main; then
+              echo "::endgroup::"
+              echo "Pushed on attempt $attempt"
+              exit 0
+            fi
+            git rebase --abort || true
+            echo "::endgroup::"
+            echo "Push attempt $attempt failed; retrying in 15s"
+            sleep 15
+          done
+          echo "::error::Could not push updated maps after 3 attempts"
+          exit 1
