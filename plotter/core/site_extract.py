@@ -27,6 +27,7 @@ SERIES_SPEC = {
     "rain": {"unit": "mm/hr", "has_dir": False, "dataset": "gfsatmos", "group": "weather"},
     "temp": {"unit": "degC", "has_dir": False, "dataset": "gfsatmos", "group": "weather"},
     "rh": {"unit": "%", "has_dir": False, "dataset": "gfsatmos", "group": "weather"},
+    "tide": {"unit": "m", "has_dir": False, "dataset": "tide", "group": "tide"},
 }
 
 
@@ -319,3 +320,101 @@ def build_site_forecast_doc(
         "grid_points": grid_points,
         "series": series,
     }
+
+
+def _series_has_values(entry: Any) -> bool:
+    if not isinstance(entry, dict):
+        return False
+    return any(v is not None for v in (entry.get("values") or []))
+
+
+def _hour_lead(label: str) -> int:
+    try:
+        return int(str(label).lstrip("Ff"))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _realign(entry: dict, source_hours: list[str], target_hours: list[str]) -> dict:
+    """Re-index one series onto ``target_hours`` by forecast-hour label."""
+    index = {label: i for i, label in enumerate(source_hours)}
+    out = {k: v for k, v in entry.items() if k not in ("values", "dir_deg")}
+    for field in ("values", "dir_deg"):
+        if field not in entry:
+            continue
+        source = entry.get(field) or []
+        out[field] = [
+            source[index[h]] if h in index and index[h] < len(source) else None
+            for h in target_hours
+        ]
+    return out
+
+
+def merge_retained_series(
+    doc: dict,
+    previous: dict | None,
+    refreshed_datasets=(),
+) -> list[str]:
+    """Keep last-published series for datasets that were not refreshed.
+
+    A run that only extracts some datasets (e.g. GFS succeeded, HYCOM failed)
+    must not drop the others from ``forecast.json``. Retained series are
+    re-indexed onto the union of both hour axes, so neither the fresh stride
+    nor the retained lead-time coverage is lost.
+
+    Returns the list of dataset names whose series were retained.
+    """
+    if not isinstance(previous, dict) or not previous:
+        return []
+
+    refreshed = set(refreshed_datasets or ())
+    series = doc.setdefault("series", {})
+    prev_series = previous.get("series") or {}
+
+    retained_keys = [
+        key
+        for key, spec in SERIES_SPEC.items()
+        if spec["dataset"] not in refreshed
+        and spec["dataset"] != "tide"  # always rebuilt hourly from harmonics
+        and not _series_has_values(series.get(key))
+        and _series_has_values(prev_series.get(key))
+    ]
+    if not retained_keys:
+        return []
+
+    doc_hours = list(doc.get("hours") or [])
+    prev_hours = list(previous.get("hours") or [])
+    extra_hours = {
+        h
+        for key in retained_keys
+        for h, value in zip(prev_hours, prev_series[key].get("values") or [])
+        if value is not None and h not in set(doc_hours)
+    }
+    target_hours = sorted(set(doc_hours) | extra_hours, key=_hour_lead)
+
+    if target_hours != doc_hours:
+        prev_valid = dict(zip(prev_hours, previous.get("valid_times") or []))
+        doc_valid = dict(zip(doc_hours, doc.get("valid_times") or []))
+        doc["hours"] = target_hours
+        doc["valid_times"] = [
+            doc_valid.get(h) or prev_valid.get(h) for h in target_hours
+        ]
+        for key, entry in list(series.items()):
+            series[key] = _realign(entry, doc_hours, target_hours)
+
+    retained_datasets = []
+    for key in retained_keys:
+        series[key] = _realign(prev_series[key], prev_hours, target_hours)
+        dataset = SERIES_SPEC[key]["dataset"]
+        if dataset not in retained_datasets:
+            retained_datasets.append(dataset)
+
+    prev_cycles = previous.get("cycles") or {}
+    prev_grid = previous.get("grid_points") or {}
+    for dataset in retained_datasets:
+        if prev_cycles.get(dataset):
+            doc.setdefault("cycles", {})[dataset] = prev_cycles[dataset]
+        if prev_grid.get(dataset):
+            doc.setdefault("grid_points", {})[dataset] = prev_grid[dataset]
+
+    return retained_datasets

@@ -210,6 +210,32 @@ def test_sync_status_cycles():
     assert config["status"]["datasets"]["hycom"]["cycle"] == "2026072412"
 
 
+def test_load_previous_cycles_preserves_stale_source_metadata(tmp_path):
+    import scripts.generate_config as gc
+
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "cycles": {
+                    "gfswave": "2026072518",
+                    "gfsatmos": "2026072518",
+                    "hycom": "2026072421",
+                }
+            }
+        )
+    )
+
+    cycles = gc.load_previous_cycles(config_path)
+    cycles.update({"gfswave": "2026072600", "gfsatmos": "2026072600"})
+
+    assert cycles == {
+        "gfswave": "2026072600",
+        "gfsatmos": "2026072600",
+        "hycom": "2026072421",
+    }
+
+
 def test_scan_sites_and_status_operational(tmp_path, monkeypatch):
     import scripts.generate_config as gc
 

@@ -43,6 +43,14 @@ def _fixture_doc(*, n_hours: int = 25, hour_step: int = 3) -> dict:
     rain = [0.0 if i % 5 else 1.2 for i in range(n)]
     temp = [27.0 + (i % 6) * 0.1 for i in range(n)]
     rh = [70.0 + (i % 8) for i in range(n)]
+    # Hourly tide over the same window (F000…F072 → 73 samples).
+    n_tide = (n_hours - 1) * hour_step + 1
+    tide = [0.2 * ((i % 5) - 2) for i in range(n_tide)]
+    tide_hours = [f"F{t:03d}" for t in range(n_tide)]
+    tide_times = [
+        (cycle + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        for i in range(n_tide)
+    ]
 
     return {
         "site": {
@@ -55,6 +63,7 @@ def _fixture_doc(*, n_hours: int = 25, hour_step: int = 3) -> dict:
             "gfswave": "2026072518",
             "gfsatmos": "2026072518",
             "hycom": "2026072421",
+            "tide": "GOT4.10",
         },
         "generated_at": "2026-07-26T04:00:00Z",
         "hours": hours,
@@ -73,6 +82,14 @@ def _fixture_doc(*, n_hours: int = 25, hour_step: int = 3) -> dict:
             "rain": series(rain, None, "mm/hr"),
             "temp": series(temp, None, "degC"),
             "rh": series(rh, None, "%"),
+            "tide": {
+                "unit": "m",
+                "values": tide,
+                "hours": tide_hours,
+                "valid_times": tide_times,
+                "model": "GOT4.10",
+                "step_hours": 1,
+            },
         },
     }
 

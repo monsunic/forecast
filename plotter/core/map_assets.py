@@ -1,5 +1,7 @@
 """Helpers for managing rendered map WebP assets on disk."""
 
+import os
+import shutil
 from pathlib import Path
 
 
@@ -87,3 +89,45 @@ def verify_param_maps(maps_root: Path, regions, params, hours):
         raise SystemExit(
             f"[ERROR] Incomplete render: {len(missing)} expected map(s) missing:\n  {preview}{more}"
         )
+
+
+def promote_param_maps(staging_root: Path, maps_root: Path, regions, params, hours):
+    """Promote a verified render without clearing the previous maps first.
+
+    Each new frame atomically replaces its old counterpart. Off-schedule frames
+    are removed only after all expected staged frames have been promoted, so a
+    download/render failure leaves the last successful dataset untouched.
+    """
+    hour_list = _normalize_hours(hours)
+    if not hour_list:
+        raise ValueError("Cannot promote a render with no forecast hours")
+
+    verify_param_maps(staging_root, regions, params, hour_list)
+    expected_hours = set(hour_list)
+    promoted = 0
+    removed = 0
+
+    for region in regions:
+        source_dir = staging_root / region
+        target_dir = maps_root / region
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        for param in params:
+            for hour in hour_list:
+                source = source_dir / f"{param}_{hour:03d}.webp"
+                target = target_dir / source.name
+                os.replace(source, target)
+                promoted += 1
+
+            for old in target_dir.glob(f"{param}_*.webp"):
+                hour = _hour_from_name(old)
+                if hour is not None and hour not in expected_hours:
+                    old.unlink()
+                    removed += 1
+
+    shutil.rmtree(staging_root, ignore_errors=True)
+    print(
+        f"[INFO] Promoted {promoted} map file(s) to {maps_root}"
+        + (f"; removed {removed} stale frame(s)" if removed else "")
+    )
+    return promoted

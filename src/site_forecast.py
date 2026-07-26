@@ -32,9 +32,50 @@ from plotter.core.site_extract import (
     append_hour_to_series,
     build_site_forecast_doc,
     empty_series_shell,
+    merge_retained_series,
+)
+from plotter.core.tide import (
+    hourly_tide_axis,
+    load_constituents,
+    predict_tide_series,
+    site_entry,
+    tide_series_entry,
 )
 
 SITES_ROOT = ROOT / "assets" / "sites"
+
+
+def attach_astronomical_tide(doc: dict, constituents: dict | None = None) -> bool:
+    """Predict hourly astronomical tide over the site forecast window.
+
+    Tide keeps its own ``hours`` / ``valid_times`` (1-hour step) so it is not
+    forced onto the coarser GFS axis. Always rebuilt from harmonics.
+    """
+    site = doc.get("site") or {}
+    sid = site.get("id")
+    valid_times = doc.get("valid_times") or []
+    if not sid or not valid_times:
+        return False
+    try:
+        table = constituents if constituents is not None else load_constituents()
+    except (OSError, json.JSONDecodeError, TypeError):
+        return False
+    entry = site_entry(table, sid)
+    if not entry:
+        return False
+
+    tide_hours, tide_times = hourly_tide_axis(valid_times)
+    if not tide_times:
+        return False
+    values = predict_tide_series(entry, tide_times)
+    if not any(v is not None for v in values):
+        return False
+    model = str(table.get("model") or entry.get("model") or "tide")
+    doc.setdefault("series", {})["tide"] = tide_series_entry(
+        values, model, hours=tide_hours, valid_times=tide_times
+    )
+    doc.setdefault("cycles", {})["tide"] = model
+    return True
 
 
 def parse_args():
@@ -169,6 +210,27 @@ def _draw_dir_arrows(ax, x, y, dirs, *, color: str, convention: str = "from") ->
         )
 
 
+def _plot_gapless(ax, x, values, **kwargs):
+    """Plot a series that may be sampled coarser than the shared hour axis.
+
+    Ocean fields run on a 6-hourly stride while the axis follows the 3-hourly
+    GFS one, so plotting raw NaNs would leave every point isolated and nothing
+    would be drawn. Connect the valid samples instead and mark them.
+    """
+    pts = [
+        (xi, float(v))
+        for xi, v in zip(x, values)
+        if v is not None and np.isfinite(float(v))
+    ]
+    if not pts:
+        return False
+    xs, ys = zip(*pts)
+    kwargs.setdefault("marker", "o")
+    kwargs.setdefault("markersize", 3)
+    ax.plot(xs, ys, **kwargs)
+    return True
+
+
 def _style_axes(ax, ax_right=None, ax_right2=None):
     ax.grid(True, alpha=0.25)
     ax.tick_params(axis="both", labelsize=8)
@@ -212,7 +274,7 @@ def render_site_charts(doc: dict, outfile: Path) -> None:
     def _entry(key):
         return series.get(key) or {}
 
-    fig, axes = plt.subplots(3, 1, figsize=(10.5, 9.5), sharex=True, dpi=110)
+    fig, axes = plt.subplots(4, 1, figsize=(10.5, 11.5), sharex=False, dpi=110)
     fig.suptitle(
         f"{site.get('name', site.get('id', 'Site'))} — Site Forecast",
         fontsize=13,
@@ -258,12 +320,12 @@ def render_site_charts(doc: dict, outfile: Path) -> None:
     sst = _aligned(_entry("sst").get("values"))
     current = _aligned(_entry("current").get("values"))
     current_dir = _aligned(_entry("current").get("dir_deg"))
-    plotted = False
-    if any(v is not None for v in sst):
-        ax.plot(x, _nan_arr(sst), color="#C45C26", linewidth=1.8, label="SST (°C)")
-        plotted = True
-    if any(v is not None for v in current):
-        ax_r.plot(x, _nan_arr(current), color="#1F7A5C", linewidth=1.8, label="Current (cm/s)")
+    plotted = _plot_gapless(
+        ax, x, sst, color="#C45C26", linewidth=1.8, label="SST (°C)"
+    )
+    if _plot_gapless(
+        ax_r, x, current, color="#1F7A5C", linewidth=1.8, label="Current (cm/s)"
+    ):
         _draw_dir_arrows(ax_r, x, current, current_dir, color="#1F7A5C", convention="to")
         plotted = True
     if plotted:
@@ -307,10 +369,52 @@ def render_site_charts(doc: dict, outfile: Path) -> None:
     ax.set_title("Weather", fontsize=10, loc="left", pad=4)
     _style_axes(ax, ax_r, ax_r2)
 
+    # --- Tide: astronomical height on its own hourly axis ---
+    ax = axes[3]
+    tide_entry = _entry("tide")
+    tide_times = list(tide_entry.get("valid_times") or [])
+    tide_hours = list(tide_entry.get("hours") or [])
+    tide_vals = list(tide_entry.get("values") or [])
+    tide_model = (tide_entry.get("model") or "tide").strip()
+    if tide_times and any(v is not None for v in tide_vals):
+        n_tide = len(tide_times)
+        tide_x = list(range(n_tide))
+        if len(tide_vals) < n_tide:
+            tide_vals = tide_vals + [None] * (n_tide - len(tide_vals))
+        tide_vals = tide_vals[:n_tide]
+        tide_labels = [
+            _format_axis_label(
+                tide_times[i],
+                tide_hours[i] if i < len(tide_hours) else None,
+            )
+            for i in range(n_tide)
+        ]
+        ax.plot(
+            tide_x,
+            _nan_arr(tide_vals),
+            color="#1B4F72",
+            linewidth=1.8,
+            label=f"Tide ({tide_model})",
+        )
+        ax.axhline(0.0, color="#9db0c3", linewidth=0.8, linestyle=(0, (4, 3)))
+        ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
+        step_t = max(1, n_tide // 12)
+        ax.set_xticks(tide_x[::step_t])
+        ax.set_xticklabels(tide_labels[::step_t], rotation=45, ha="right", fontsize=8)
+    else:
+        ax.set_xticks([])
+    ax.set_ylabel("m", fontsize=9)
+    ax.set_title("Tide (astronomical, hourly)", fontsize=10, loc="left", pad=4)
+    _style_axes(ax)
+    ax.set_xlabel("Valid time (UTC)", fontsize=9)
+
+    # Shared GFS axis labels on the weather panel (tide has its own ticks above).
     step = max(1, len(labels) // 12) if labels else 1
+    for i in (0, 1):
+        axes[i].set_xticks(x[::step] if x else [])
+        axes[i].tick_params(axis="x", labelbottom=False)
     axes[2].set_xticks(x[::step] if x else [])
     axes[2].set_xticklabels(labels[::step] if labels else [], rotation=45, ha="right", fontsize=8)
-    axes[2].set_xlabel("Valid time (UTC)", fontsize=9)
 
     cycles = doc.get("cycles") or {}
     cycle_bits = ", ".join(f"{k}={v}" for k, v in cycles.items())
@@ -319,7 +423,7 @@ def render_site_charts(doc: dict, outfile: Path) -> None:
         0.005,
         (
             f"Nusawave Forecast  |  {cycle_bits}  |  {doc.get('generated_at', '')}  |  "
-            "Arrows = wind/wave propagation & current flow"
+            "Arrows = wind/wave propagation & current flow; tide = astronomical hourly (no surge)"
         ),
         fontsize=7,
         fontfamily="monospace",
@@ -371,6 +475,10 @@ def run_site_forecast(
         for s in sites
     }
 
+    # Datasets that produced at least one usable hour; the rest fall back to
+    # whatever the previous publication holds.
+    extracted: list[str] = []
+
     # Process dataset-by-dataset so a missing HYCOM cycle does not block wave/weather.
     for dataset in datasets:
         cycle = cycles.get(dataset)
@@ -418,7 +526,9 @@ def run_site_forecast(
 
             print(f"[INFO] Site extract {dataset} t+{t:03d}h ({len(sites)} sites)")
 
-        if not hours_done:
+        if hours_done:
+            extracted.append(dataset)
+        else:
             print(f"[WARN] No hours extracted for {dataset}")
 
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -463,6 +573,18 @@ def run_site_forecast(
         out_dir = SITES_ROOT / sid
         out_dir.mkdir(parents=True, exist_ok=True)
         json_path = out_dir / "forecast.json"
+        previous = None
+        if json_path.is_file():
+            try:
+                previous = json.loads(json_path.read_text())
+            except (OSError, json.JSONDecodeError, TypeError):
+                previous = None
+        retained = merge_retained_series(doc, previous, refreshed_datasets=extracted)
+        if retained:
+            print(f"[INFO] Retained previous {', '.join(retained)} series for {sid}")
+        if attach_astronomical_tide(doc):
+            print(f"[INFO] Attached astronomical tide for {sid}")
+
         json_path.write_text(json.dumps(doc, indent=2) + "\n")
         chart_path = out_dir / "charts.webp"
         try:

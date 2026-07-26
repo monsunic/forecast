@@ -6,7 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nusawave Forecast</title>
   <link rel="icon" href="assets/icons/nusawave-forecast-logo.png" type="image/png" />
-  <link rel="stylesheet" href="src/style.css?v=20260726-home-domain3" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="src/style.css?v=20260726-faqs" />
 </head>
 
 <body>
@@ -30,7 +33,6 @@
         <button data-section="map">Map Forecast</button>
         <button data-section="site">Site Forecast</button>
         <button data-section="route">Route Forecast</button>
-        <button data-section="observation">Observation</button>
         <button data-section="status">Status</button>
         <button data-section="faqs">FAQs</button>
         <button data-section="about">About</button>
@@ -39,37 +41,51 @@
     </aside>
 
     <main class="content">
-      <section id="home" class="section">
-        <h1>Nusawave Forecast</h1>
-        <p>A lightweight marine weather forecast for the Southeast Asia Region.</p>
-        <h3 style="display: flex;justify-content: center; text-align: center; margin-top:40px;">Explore our free services</h3>
-
-        <div class="services-grid">
-          <div class="card service-card" data-target="map">
-            <h4>Map Forecast</h4>
-            <p>Regional maps showing wind, waves, weather, and ocean conditions.</p>
-            <span>Read more →</span>
-          </div>
-
-          <div class="card service-card" data-target="site">
-            <h4>Site Forecast</h4>
-            <p>Point-based forecast for harbors, offshore locations, and coastal sites.</p>
-            <span>Read more →</span>
-          </div>
-
-          <div class="card service-card" data-target="route">
-            <h4>Route Forecast</h4>
-            <p>Route-based forecast for voyage planning with wind and wave conditions.</p>
-            <span>Read more →</span>
-          </div>
-
-          <div class="card service-card" data-target="observation">
-            <h4>Observations</h4>
-            <p>Latest buoy, satellite, and coastal observations across the region.</p>
-            <span>Read more →</span>
-          </div>
+      <section id="home" class="section home-section">
+        <div class="home-hero">
+          <p class="home-eyebrow">Southeast Asia marine weather</p>
+          <h1 class="home-brand">Nusawave Forecast</h1>
+          <p class="home-lede">Operational maps and port forecasts from trusted ocean and atmosphere models — built for safer decisions at sea.</p>
         </div>
-        </section>
+
+        <div class="home-services" aria-label="Forecast services">
+          <button type="button" class="home-service" data-target="map">
+            <span class="home-service-index">01</span>
+            <span class="home-service-body">
+              <span class="home-service-title">Map Forecast</span>
+              <span class="home-service-copy">Regional wind, waves, weather, and ocean fields across Southeast Asia.</span>
+            </span>
+            <span class="home-service-meta">
+              <span class="home-service-state home-service-state--live">Live</span>
+              <span class="home-service-action" aria-hidden="true">Open</span>
+            </span>
+          </button>
+
+          <button type="button" class="home-service" data-target="site">
+            <span class="home-service-index">02</span>
+            <span class="home-service-body">
+              <span class="home-service-title">Site Forecast</span>
+              <span class="home-service-copy">Port time series for waves, ocean, weather, and astronomical tide.</span>
+            </span>
+            <span class="home-service-meta">
+              <span class="home-service-state home-service-state--live">Live</span>
+              <span class="home-service-action" aria-hidden="true">Open</span>
+            </span>
+          </button>
+
+          <button type="button" class="home-service" data-target="route" data-soon="true">
+            <span class="home-service-index">03</span>
+            <span class="home-service-body">
+              <span class="home-service-title">Route Forecast</span>
+              <span class="home-service-copy">Voyage-aware wind and wave guidance along planned tracks.</span>
+            </span>
+            <span class="home-service-meta">
+              <span class="home-service-state">Soon</span>
+              <span class="home-service-action" aria-hidden="true">Preview</span>
+            </span>
+          </button>
+        </div>
+      </section>
 
       <section id="map" class="section">
         <h2>Map Forecast</h2>
@@ -105,7 +121,7 @@
 
       <section id="site" class="section">
         <h2>Site Forecast</h2>
-        <p class="site-intro">Point forecasts for major Southeast Asian ports — click a marker or choose a port.</p>
+        <p class="site-intro">Point forecasts for major Southeast Asian ports — waves, ocean, weather, and astronomical tide. Click a marker or choose a port.</p>
         <div class="site-controls">
           <select id="siteSelect" aria-label="Port site"></select>
           <button type="button" id="siteOverviewBtn" class="overview-btn">Port map</button>
@@ -123,10 +139,6 @@
         <h2>Route Forecast</h2>
         <p>Coming soon ...</p>
       </section>
-      <section id="observation" class="section">
-        <h2>Observation</h2>
-        <p>Coming soon ...</p>
-      </section>
       <section id="status" class="section">
         <h2>Status</h2>
         <p class="status-intro">Data update status for Map Forecast sources. Refreshed automatically when the forecast pipeline runs.</p>
@@ -136,19 +148,80 @@
       </section>
       <section id="faqs" class="section">
         <h2>FAQs</h2>
-        <p>Coming soon ...</p>
+        <p class="faqs-intro">Short answers about the forecasts, data sources, and how to read the products.</p>
+        <div class="faq-list">
+          <details class="faq-item" open>
+            <summary>What is Nusawave Forecast?</summary>
+            <p>A free marine weather service for Southeast Asia. It turns trusted numerical models into regional maps and port-level charts so you can check wind, waves, weather, ocean conditions, and astronomical tide in one place.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>What is the difference between Map Forecast and Site Forecast?</summary>
+            <p><strong>Map Forecast</strong> shows regional fields (wind, waves, atmosphere, ocean) you can animate through lead times. <strong>Site Forecast</strong> samples major ports and plots time series for waves &amp; wind, ocean, weather, and hourly astronomical tide.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Which models power the forecasts?</summary>
+            <p>Maps and port series use <strong>NOAA GFS Wave</strong>, <strong>NOAA GFS Atmosphere</strong>, and <strong>HYCOM</strong> for sea temperature and surface currents. Port tide uses astronomical harmonics (FES2022 preferred; GOT4.10 bootstrap until FES is configured).</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>How far ahead does the forecast go?</summary>
+            <p>The operational window is about <strong>3 days</strong> (F000–F072). Wind, waves, and weather are typically 3-hourly; ocean fields are 6-hourly; tide is hourly.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>How often is the data updated?</summary>
+            <p>An automated pipeline refreshes maps and site charts when new model cycles are available. GFS is treated as fresh within about <strong>18 hours</strong> of initial time; HYCOM often lags longer. Open <strong>Status</strong> for per-dataset cycle age and coverage.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Why can ocean look older than wind or weather?</summary>
+            <p>Each dataset publishes independently. If HYCOM fails on a run, the last complete ocean maps and port ocean series are kept while GFS updates normally—so the site stays usable instead of going blank.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Is the tide the same as observed water level?</summary>
+            <p>No. Site tide is <strong>astronomical only</strong> (harmonic prediction). It does not include storm surge, river discharge, or residual water level. Use it as tidal timing and range guidance, not as a measured gauge.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>What do the direction arrows mean?</summary>
+            <p>On site charts, arrows show where wind and waves <strong>propagate toward</strong> (meteorological direction is “from”), and where current <strong>flows toward</strong>. Hover a point for the compass reading.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Which ports are available?</summary>
+            <p>Hai Phong, Ho Chi Minh (Saigon), Laem Chabang, Manila, Port Klang, Singapore, Tanjung Perak (Surabaya), and Tanjung Priok (Jakarta). More ports can be added later.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Is Route Forecast available?</summary>
+            <p>Not yet — it is planned. Map and Site Forecast are live today.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Can I use this for navigation or commercial operations?</summary>
+            <p>Forecasts are for <strong>informational purposes</strong> and are not official meteorological warnings. The project is licensed <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="license">CC BY-NC-ND 4.0</a> (non-commercial, no derivatives). For commercial or derivative use, contact <a href="mailto:nusawaveintelligence@gmail.com">nusawaveintelligence@gmail.com</a>.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Where can I see the source code?</summary>
+            <p>On <a href="https://github.com/nusawave/nusawave-forecast" target="_blank" rel="noopener noreferrer">GitHub</a>. Attribution for model data and libraries is in the repository <code>NOTICE</code> file.</p>
+          </details>
+        </div>
       </section>
       <section id="about" class="section">
         <h2>About</h2>
-        <p>Nusawave Forecast was created to bring accessible, reliable, and high-quality 
-          marine weather information to everyone navigating the waters of Southeast Asia. 
+        <p>Nusawave Forecast was created to bring accessible, reliable, and high-quality
+          marine weather information to everyone navigating the waters of Southeast Asia.
           <br><br>
-          Built from the perspective of operational marine meteorology, 
-          it bridges the gap between complex numerical models and the practical needs of 
-          sailors, fishermen, offshore operators, and coastal communities. 
+          Built from the perspective of operational marine meteorology,
+          it bridges the gap between complex numerical models and the practical needs of
+          sailors, fishermen, offshore operators, and coastal communities.
           <br><br>
-          By combining lightweight technology, modern visualization, and 
-          scientifically trusted data, Nusawave delivers fast, intuitive forecasts 
+          By combining lightweight technology, modern visualization, and
+          scientifically trusted data, Nusawave delivers fast, intuitive forecasts
           that empower safer decisions at sea—whether for daily operations or voyage planning.</p>
         <p><small>Forecast maps are derived from NOAA GFS Wave and GFS Atmosphere data and are provided for
           informational purposes only. Source code is on
@@ -164,7 +237,7 @@
     </main>
   </div>
 
-  <script type="module" src="src/main.js?v=20260726-home-domain3"></script>
+  <script type="module" src="src/main.js?v=20260726-faqs"></script>
 </body>
 
 </html>

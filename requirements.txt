@@ -8,3 +8,5 @@ pandas
 pytest
 cfgrib
 eccodes
+pyTMD
+timescale

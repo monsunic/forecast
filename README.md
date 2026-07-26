@@ -1,11 +1,11 @@
 # Nusawave Forecast
 
-A lightweight marine weather forecast platform for Southeast Asia. The site is a static HTML/JS frontend that displays pre-generated maps and point forecasts derived from NOAA GFS (Wave + Atmosphere) and HYCOM ocean model data.
+A lightweight marine weather forecast platform for Southeast Asia. The site is a static HTML/JS frontend that displays pre-generated maps and point forecasts derived from NOAA GFS (Wave + Atmosphere), HYCOM ocean model data, and astronomical tide harmonics.
 
 ## Architecture
 
 1. **Plotter** (`src/plot.py`) — fetches gridded data from [NOAA NOMADS](https://nomads.ncep.noaa.gov/) (GFS Wave/Atmosphere) and [HYCOM NCSS](https://tds.hycom.org/) (ocean surface), then renders regional forecast maps with Cartopy.
-2. **Site Forecast** (`src/site_forecast.py`) — samples the nearest valid grid point for each configured port and emits compact per-site time series (`forecast.json`) plus a downloadable static chart pack (`charts.webp`).
+2. **Site Forecast** (`src/site_forecast.py`) — samples the nearest valid grid point for each configured port and emits compact per-site time series (`forecast.json`) plus a downloadable static chart pack (`charts.webp`). Astronomical tide is predicted from bundled port harmonics (FES2022 when available; GOT4.10 bootstrap otherwise).
 3. **Config generator** (`scripts/generate_config.py`) — scans `assets/maps/` and `assets/sites/`, then writes `assets/config/config.json` (the frontend catalog + service/data status).
 4. **Frontend** (`index.html`, `src/main.js`) — static SPA with cascading map dropdowns, a time strip, an interactive Leaflet port map, and lazy-loaded Chart.js site charts.
 
@@ -66,6 +66,21 @@ bash scripts/run_forecast.sh
 
 Environment overrides: `CYCLE`, `HYCOM_CYCLE`, `MAX_HOURS`, `HOUR_STEP`, `REGION`, `DATASETS`.
 
+### Tide harmonics (Site Forecast)
+
+Port tide charts use harmonic constituents stored in `plotter/data/tide_constituents.json`. Prefer **FES2022** once the AVISO atlas is available locally; until then the repo ships a **GOT4.10** bootstrap extracted for the configured ports.
+
+```bash
+# Public bootstrap (downloads GOT4.10 on first run)
+python scripts/extract_tide_constituents.py --model GOT4.10 --fetch
+
+# FES2022 once the atlas is registered/downloaded
+NW_TIDE_DIRECTORY=/path/to/tides \
+  python scripts/extract_tide_constituents.py --model FES2022_extrapolated
+```
+
+Tide heights are astronomical only (no storm surge / residual water level).
+
 ### Serve the site locally
 
 ```bash
@@ -76,20 +91,21 @@ Open http://localhost:8000 — select a region, choose **Wind and Waves**, pick 
 
 ## Automated updates
 
-GitHub Actions workflow `.github/workflows/forecast.yml` runs on a cron schedule, generates maps + site forecasts, updates `config.json`, and commits results to `main`. The **Status** menu on the site is populated automatically from `config.json` (service state + per-dataset freshness). Enable **GitHub Pages** on the repository root for static hosting.
+GitHub Actions workflow `.github/workflows/forecast.yml` runs on a cron schedule, generates maps + site forecasts, updates `config.json`, and commits results to `main`. Dataset maps are published independently: a complete new GFS render can go live even if the ocean source fails, while that source's last complete map set and cycle remain available. The **Status** menu on the site is populated automatically from `config.json` (service state + per-dataset freshness). Enable **GitHub Pages** on the repository root for static hosting.
 
 ## Data attribution
 
 - **NOAA GFS Wave** (0.25° global) — wind, significant wave height, swell — via NOMADS HTTPS GRIB2 (`plotter/core/grib_loader.py`). OpenDAP access was retired in February 2026.
 - **NOAA GFS Atmosphere** (0.25°) — precipitation, 2 m temperature, humidity, MSLP.
 - **HYCOM** — sea-surface temperature and ocean surface currents — via the NCSS endpoint (`plotter/core/hycom_loader.py`).
+- **Astronomical tide** — port harmonics from FES2022 (preferred) or GOT4.10 (bootstrap), predicted with pyTMD (`plotter/core/tide.py`).
 
 ## Project status
 
 - **Map Forecast** — operational across GFS Wave, GFS Atmosphere, and HYCOM ocean products.
-- **Site Forecast** — operational. Interactive Leaflet port map (8 major SEA ports) with per-port charts for waves/wind, ocean, and weather. Includes wind/wave/current **direction vectors**, compass tooltips, human-readable UTC time axes, and a downloadable chart pack that matches the on-screen view.
+- **Site Forecast** — operational. Interactive Leaflet port map (8 major SEA ports) with per-port charts for waves/wind, ocean, weather, and astronomical tide.
 - **Product catalog** — see [docs/PRODUCT_CATALOG.md](docs/PRODUCT_CATALOG.md) for all defined products, plot types (shaded `contourf`/`pcolormesh`, line `contour`, vector `quiver`/`windbarb`), and deployment status. Each shaded product uses a **Nusawave-branded discrete palette** from [`plotter/core/colormaps.py`](plotter/core/colormaps.py) (not BMKG-style defaults).
-- **Route / Observations** — planned (UI placeholders).
+- **Route Forecast** — planned (UI placeholder).
 
 ### Configured ports (Site Forecast)
 

@@ -17,6 +17,28 @@ NOAA Global Forecast System (GFS) Wave model data
            NOAA/NWS products. See NOAA and NWS terms of use for data policies.
 
 
+NOAA Global Forecast System (GFS) Atmosphere model data
+  Source: NOAA / NCEP
+  Access:  https://nomads.ncep.noaa.gov/
+  Notes:   Precipitation, temperature, humidity, and MSLP fields used for Map
+           and Site Forecast atmosphere products.
+
+
+HYCOM ocean model data
+  Source: Hybrid Coordinate Ocean Model / Naval Research Laboratory
+  Access:  https://tds.hycom.org/
+  Notes:   Sea-surface temperature and surface currents via NCSS.
+
+
+Astronomical tide harmonics
+  Preferred: FES2022 (AVISO / CNES / LEGOS / CLS)
+  Bootstrap: GOT4.10 (NASA GSFC)
+  Software:  pyTMD (https://github.com/pyTMD/pyTMD)
+  Notes:     Site Forecast tide charts are harmonic reconstructions only and
+             do not include storm surge or residual water level. Cite AVISO
+             FES terms when publishing FES2022-derived products.
+
+
 OPEN-SOURCE DEPENDENCIES
 ------------------------
 
@@ -32,7 +54,9 @@ requirements.txt for the full list). Each is subject to its own license:
   - pandas            — BSD 3-Clause
   - pytest            — MIT
   - cfgrib            — Apache-2.0
-  - eccodes             — Apache-2.0
+  - eccodes           — Apache-2.0
+  - pyTMD             — MIT
+  - timescale         — MIT
 
 Install and review each package's license before redistribution or commercial
 use of a derivative work. This repository is licensed under CC BY-NC-ND 4.0;

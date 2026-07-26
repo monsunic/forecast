@@ -73,6 +73,90 @@ def test_append_hour_to_series_pads_missing_keys():
     assert series["rain"]["values"] == [None, None]
 
 
+def test_merge_retained_series_keeps_ocean_when_hycom_missing():
+    from plotter.core.site_extract import merge_retained_series
+
+    doc = {
+        "cycles": {"gfswave": "2026072600", "gfsatmos": "2026072600"},
+        "hours": ["F000", "F003", "F006", "F009"],
+        "valid_times": ["t0", "t3", "t6", "t9"],
+        "series": {
+            "wind_speed": {"unit": "kt", "values": [10, 11, 12, 13], "dir_deg": [1, 2, 3, 4]},
+        },
+        "grid_points": {"gfswave": {"lat": 1.0, "lon": 103.0}},
+    }
+    previous = {
+        "cycles": {"gfswave": "2026072518", "hycom": "2026072421"},
+        "hours": ["F000", "F006"],
+        "series": {
+            "sst": {"unit": "degC", "values": [29.1, 29.4]},
+            "current": {"unit": "cm/s", "values": [40.0, 42.0], "dir_deg": [80.0, 90.0]},
+        },
+        "grid_points": {"hycom": {"lat": 1.2, "lon": 103.8}},
+    }
+
+    retained = merge_retained_series(
+        doc, previous, refreshed_datasets=["gfswave", "gfsatmos"]
+    )
+    assert retained == ["hycom"]
+    assert doc["cycles"]["hycom"] == "2026072421"
+    assert doc["grid_points"]["hycom"] == {"lat": 1.2, "lon": 103.8}
+    assert doc["hours"] == ["F000", "F003", "F006", "F009"]
+    assert doc["series"]["sst"]["values"] == [29.1, None, 29.4, None]
+    assert doc["series"]["current"]["dir_deg"] == [80.0, None, 90.0, None]
+
+
+def test_merge_retained_series_keeps_gfs_when_only_ocean_refreshed():
+    """A HYCOM-only re-extract must not drop wave/weather series."""
+    from plotter.core.site_extract import merge_retained_series
+
+    doc = {
+        "cycles": {"hycom": "2026072600"},
+        "hours": ["F000", "F006"],
+        "valid_times": ["t0", "t6"],
+        "series": {"sst": {"unit": "degC", "values": [29.8, 29.9]}},
+        "grid_points": {"hycom": {"lat": 1.2, "lon": 103.8}},
+    }
+    previous = {
+        "cycles": {"gfswave": "2026072518", "gfsatmos": "2026072518"},
+        "hours": ["F000", "F003", "F006"],
+        "valid_times": ["p0", "p3", "p6"],
+        "series": {
+            "wind_speed": {"unit": "kt", "values": [10, 11, 12], "dir_deg": [1, 2, 3]},
+            "temp": {"unit": "degC", "values": [27.0, 27.5, 28.0]},
+        },
+        "grid_points": {"gfswave": {"lat": 1.0, "lon": 103.0}},
+    }
+
+    retained = merge_retained_series(doc, previous, refreshed_datasets=["hycom"])
+    assert set(retained) == {"gfswave", "gfsatmos"}
+    # Union axis keeps the finer GFS stride alongside 6-hourly ocean values.
+    assert doc["hours"] == ["F000", "F003", "F006"]
+    assert doc["valid_times"] == ["t0", "p3", "t6"]
+    assert doc["series"]["sst"]["values"] == [29.8, None, 29.9]
+    assert doc["series"]["wind_speed"]["values"] == [10, 11, 12]
+    assert doc["series"]["temp"]["values"] == [27.0, 27.5, 28.0]
+    assert doc["cycles"]["gfswave"] == "2026072518"
+
+
+def test_merge_retained_series_skips_refreshed_datasets():
+    from plotter.core.site_extract import merge_retained_series
+
+    doc = {
+        "cycles": {"hycom": "2026072600"},
+        "hours": ["F000"],
+        "valid_times": ["t0"],
+        "series": {"sst": {"unit": "degC", "values": [30.0]}},
+    }
+    previous = {
+        "cycles": {"hycom": "2026072421"},
+        "hours": ["F000"],
+        "series": {"sst": {"unit": "degC", "values": [29.0]}},
+    }
+    assert merge_retained_series(doc, previous, refreshed_datasets=["hycom"]) == []
+    assert doc["series"]["sst"]["values"] == [30.0]
+
+
 def test_build_site_forecast_doc_schema():
     from plotter.core.site_extract import build_site_forecast_doc, empty_series_shell
 

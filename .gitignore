@@ -2,6 +2,7 @@
 !plotter/plot.ipynb
 __pycache__/
 .pytest_cache/
+.forecast-staging/
 .ipynb_checkpoints/
 .env
 .env.*

@@ -1,6 +1,9 @@
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -21,7 +24,7 @@ from plotter.core.config_loader import (
     get_hour_step,
     load_param_config,
 )
-from plotter.core.map_assets import clear_param_maps, verify_param_maps
+from plotter.core.map_assets import promote_param_maps
 from plotter.core.utils import get_dataset_url, load_model_params
 
 GFSWAVE_PARAMS = ("wind", "swh", "swell")
@@ -107,10 +110,13 @@ def main():
     params_load = load_model_params(args.dataset)
 
     maps_root = ROOT / "assets" / "maps" / args.dataset
-    plot_params = [p for p in params if p in yaml_params]
-    clear_param_maps(
-        maps_root, regions, plot_params, forecast_hours=forecast_hours, purge_beyond=True
+    staging_parent = ROOT / ".forecast-staging"
+    staging_parent.mkdir(exist_ok=True)
+    staging_root = Path(
+        tempfile.mkdtemp(prefix=f"{args.dataset}-", dir=staging_parent)
     )
+    atexit.register(shutil.rmtree, staging_root, ignore_errors=True)
+    plot_params = [p for p in params if p in yaml_params]
 
     if args.dataset in ("gfswave", "gfsatmos", "hycom"):
         if args.dataset == "gfswave":
@@ -147,7 +153,7 @@ def main():
                     if "windbarb" in yaml_defaults:
                         cfg.windbarb.update(yaml_defaults["windbarb"])
 
-                    cfg.outfile = str(maps_root / region / f"{param}_{t:03d}")
+                    cfg.outfile = str(staging_root / region / f"{param}_{t:03d}")
                     cfg.baserun = baserun
                     cfg.datasource = params_load.get("source", args.dataset)
 
@@ -155,9 +161,12 @@ def main():
                     plotter.plot_map(ds, param)
             hours_done.append(t)
 
-        if not hours_done:
-            raise SystemExit("[ERROR] No forecast hours rendered")
-        verify_param_maps(maps_root, regions, plot_params, hours_done)
+        if hours_done != forecast_hours:
+            raise SystemExit(
+                f"[ERROR] Incomplete dataset render: completed {len(hours_done)} of "
+                f"{len(forecast_hours)} forecast hours; keeping previous maps"
+            )
+        promote_param_maps(staging_root, maps_root, regions, plot_params, forecast_hours)
         print(
             f"[INFO] Rendered {len(hours_done)} hour(s) × {len(regions)} region(s) "
             f"× {len(plot_params)} param(s)"
@@ -189,14 +198,19 @@ def main():
                 if "windbarb" in yaml_defaults:
                     cfg.windbarb.update(yaml_defaults["windbarb"])
 
-                cfg.outfile = str(maps_root / region / f"{param}_{t:03d}")
+                cfg.outfile = str(staging_root / region / f"{param}_{t:03d}")
                 cfg.baserun = baserun
                 cfg.datasource = params_load.get("source", args.dataset)
 
                 plotter = Plotter(cfg)
                 plotter.plot_map(ds, param)
 
-    verify_param_maps(maps_root, regions, plot_params, hours_done)
+    if hours_done != forecast_hours:
+        raise SystemExit(
+            f"[ERROR] Incomplete dataset render: completed {len(hours_done)} of "
+            f"{len(forecast_hours)} forecast hours; keeping previous maps"
+        )
+    promote_param_maps(staging_root, maps_root, regions, plot_params, forecast_hours)
     print(f"[INFO] Rendered {len(hours_done)} hour(s) × {len(regions)} region(s)")
 
 

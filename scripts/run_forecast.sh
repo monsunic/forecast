@@ -4,8 +4,9 @@
 # CI contract
 # -----------
 # Datasets are plotted independently. When CONTINUE_ON_DATASET_ERROR=1 a failing
-# dataset is recorded and the remaining ones still run, and the frontend config is
-# always regenerated from whatever maps ended up on disk.
+# dataset is recorded and the remaining ones still run. Each dataset render is
+# staged and promoted only when complete, so failed sources retain their last
+# successful maps while successful sources publish their latest cycle.
 #
 # Exit status is deliberately 0 when *at least one* dataset succeeded: the
 # workflow's commit step then publishes the partial refresh instead of throwing
@@ -176,6 +177,8 @@ for ds in $DATASETS; do
 done
 
 # Site forecast reuses the same GRIB/NCSS caches as map plots when available.
+# Only successful datasets are re-extracted; site_forecast.py keeps the last
+# published series for any dataset missing from this run.
 SITE_DATASETS=""
 for ds in gfswave gfsatmos hycom; do
     for ok in "${SUCCEEDED[@]+"${SUCCEEDED[@]}"}"; do
@@ -199,8 +202,9 @@ else
     echo "[WARN] Skipping site forecast — no successful datasets"
 fi
 
-# Always rebuild the frontend config from the maps that exist, so a partial run
-# still ships a coherent site. Only successful datasets get a fresh cycle stamp.
+# Always rebuild the frontend config from the maps that exist. Successful
+# datasets get a fresh cycle stamp; failed datasets retain the cycle associated
+# with their last-published maps.
 echo "[INFO] Regenerating frontend config and product catalog"
 python3 scripts/generate_config.py ${CYCLE_ARGS[@]+"${CYCLE_ARGS[@]}"} \
     --max-hours "$MAX_HOURS" --hour-step "$HOUR_STEP" || exit 1

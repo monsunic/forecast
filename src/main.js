@@ -48,8 +48,11 @@
         });
     });
 
-    setActive(localStorage.getItem('nw_section') || 'home');
-
+    const initialSection = localStorage.getItem('nw_section') || 'home';
+    setActive(initialSection === 'observation' ? 'home' : initialSection);
+    if (initialSection === 'observation') {
+        localStorage.setItem('nw_section', 'home');
+    }
 
     /* ------------------------------------------------------------
      * CONFIG + SELECT ELEMENTS
@@ -879,6 +882,13 @@
                 { key: 'rh', label: 'RH', color: '#7D3C98', yAxisID: 'y2', dash: [2, 3] },
             ],
         },
+        {
+            id: 'tide',
+            title: 'Tide (astronomical, hourly)',
+            series: [
+                { key: 'tide', label: 'Tide', color: '#1B4F72', yAxisID: 'y' },
+            ],
+        },
     ];
 
     const SITE_CARDINALS = [
@@ -916,13 +926,17 @@
         return `${day} ${mon} ${hh}Z`;
     }
 
-    function siteChartLabels(doc) {
-        const hours = doc.hours || [];
-        const times = doc.valid_times || [];
-        return hours.map((h, i) => {
+    function siteChartLabels(doc, seriesKey = null) {
+        const entry = seriesKey ? doc.series?.[seriesKey] : null;
+        const hours = (entry?.hours?.length ? entry.hours : doc.hours) || [];
+        const times = (entry?.valid_times?.length ? entry.valid_times : doc.valid_times) || [];
+        const n = Math.max(hours.length, times.length);
+        const labels = [];
+        for (let i = 0; i < n; i += 1) {
             const label = formatSiteAxisLabel(times[i]);
-            return label || h;
-        });
+            labels.push(label || hours[i] || '');
+        }
+        return labels;
     }
 
     /** Chart.js plugin: draw flow/propagation arrows at points with dir_deg. */
@@ -1229,8 +1243,15 @@
     }
 
     function buildChartConfig(group, doc) {
-        const labels = siteChartLabels(doc);
+        const axisKey = group.id === 'tide' ? 'tide' : null;
+        const labels = siteChartLabels(doc, axisKey);
         const n = labels.length;
+        const axisHours = axisKey
+            ? (doc.series?.tide?.hours || [])
+            : (doc.hours || []);
+        const axisTimes = axisKey
+            ? (doc.series?.tide?.valid_times || [])
+            : (doc.valid_times || []);
         const datasets = [];
         const units = {};
         group.series.forEach(spec => {
@@ -1312,7 +1333,7 @@
                             title(items) {
                                 const idx = items[0]?.dataIndex;
                                 if (idx == null) return '';
-                                const iso = doc.valid_times?.[idx];
+                                const iso = axisTimes[idx];
                                 if (!iso) return labels[idx] || '';
                                 const d = new Date(iso);
                                 if (Number.isNaN(d.getTime())) return labels[idx] || '';
@@ -1321,7 +1342,7 @@
                                 const mon = MONTHS[d.getUTCMonth()].slice(0, 3);
                                 const hh = String(d.getUTCHours()).padStart(2, '0');
                                 const mm = String(d.getUTCMinutes()).padStart(2, '0');
-                                const lead = doc.hours?.[idx] ? ` · ${doc.hours[idx]}` : '';
+                                const lead = axisHours[idx] ? ` · ${axisHours[idx]}` : '';
                                 return `${wd} ${day} ${mon} ${hh}:${mm} UTC${lead}`;
                             },
                             afterBody(items) {
@@ -1433,7 +1454,7 @@
         ctx.font = '11px system-ui, sans-serif';
         const note =
             'Arrows show where wind/waves propagate and where current flows. ' +
-            'Wind/waves = from; current = toward.';
+            'Wind/waves = from; current = toward. Tide is astronomical (no surge).';
         ctx.fillText(note, 8, y + 20);
 
         const blob = await new Promise(resolve => {
@@ -1540,7 +1561,7 @@
 
         sitePanel.innerHTML =
             blocks.join('') +
-            '<p class="site-dir-note">Arrows show where wind/waves propagate and where current flows. Hover a point for compass direction (wind/waves = from, current = toward).</p>';
+            '<p class="site-dir-note">Arrows show where wind/waves propagate and where current flows. Hover a point for compass direction (wind/waves = from, current = toward). Tide is astronomical only (no surge).</p>';
 
         loadChartJs().then(Chart => {
             SITE_CHART_GROUPS.forEach(group => {
@@ -1651,8 +1672,8 @@
 
     // Max age (hours) before a dataset cycle is flagged stale in the UI.
     const FRESHNESS_HOURS = {
-        gfswave: 12,
-        gfsatmos: 12,
+        gfswave: 18,
+        gfsatmos: 18,
         hycom: 48,
         cmems: 48,
         default: 24,
@@ -1818,7 +1839,7 @@
                 <tbody>${dsRows || '<tr><td colspan="6">No datasets reported.</td></tr>'}</tbody>
               </table>
             </div>
-            <p class="status-footnote">GFS cycles are typically fresh within ~12h of initial time (pipeline runs ~5h after each synoptic cycle). HYCOM surface fields often lag ~1 day — up to ~48h is expected.</p>`;
+            <p class="status-footnote">GFS cycles are considered fresh within ~18h of initial time (pipeline runs ~5h after each synoptic cycle). HYCOM surface fields often lag ~1 day — up to ~48h is expected.</p>`;
     }
 
 
@@ -1884,9 +1905,9 @@
             initSiteForecast(CONFIG);
         });
 
-    document.querySelectorAll('.service-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const target = card.dataset.target;
+    document.querySelectorAll('.home-service').forEach(row => {
+        row.addEventListener('click', () => {
+            const target = row.dataset.target;
             localStorage.setItem('nw_section', target);
             setActive(target);
         });

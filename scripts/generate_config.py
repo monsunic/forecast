@@ -63,7 +63,6 @@ STATUS_SERVICES = [
     {"id": "map_forecast", "label": "Map Forecast", "state": "operational"},
     {"id": "site_forecast", "label": "Site Forecast", "state": "planned"},
     {"id": "route_forecast", "label": "Route Forecast", "state": "planned"},
-    {"id": "observation", "label": "Observations", "state": "planned"},
 ]
 
 
@@ -432,6 +431,22 @@ def sync_status_cycles(config):
             datasets[ds]["cycle"] = cycle
 
 
+def load_previous_cycles(path: Path):
+    """Read last-published dataset cycles for sources not refreshed this run."""
+    try:
+        previous = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError, TypeError):
+        return {}
+    cycles = previous.get("cycles") or {}
+    if not isinstance(cycles, dict):
+        return {}
+    return {
+        str(dataset): str(cycle)
+        for dataset, cycle in cycles.items()
+        if dataset and cycle
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate frontend config from map assets")
     parser.add_argument(
@@ -469,7 +484,10 @@ def main():
     max_hours = args.max_hours if args.max_hours is not None else get_default_max_hours()
     hour_step = args.hour_step if args.hour_step is not None else get_hour_step()
 
-    cycles = {}
+    out = Path(args.output)
+    # A partial refresh stamps successful datasets below and retains the cycle
+    # associated with any old maps kept for a failed dataset.
+    cycles = load_previous_cycles(out)
     if args.cycle:
         # Applied after datasets are known.
         pass
@@ -510,7 +528,6 @@ def main():
 
     sync_status_cycles(config)
 
-    out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(config, indent=2) + "\n")
 
