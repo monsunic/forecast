@@ -118,7 +118,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026072606"
+          "cycle": "2026072612"
         },
         "Atmosphere": {
           "parameters": {
@@ -452,7 +452,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026072606"
+          "cycle": "2026072612"
         },
         "Atmosphere": {
           "parameters": {
@@ -786,7 +786,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026072606"
+          "cycle": "2026072612"
         },
         "Atmosphere": {
           "parameters": {
@@ -1120,7 +1120,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026072606"
+          "cycle": "2026072612"
         },
         "Atmosphere": {
           "parameters": {
@@ -1454,7 +1454,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026072606"
+          "cycle": "2026072612"
         },
         "Atmosphere": {
           "parameters": {
@@ -1788,7 +1788,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026072606"
+          "cycle": "2026072612"
         },
         "Atmosphere": {
           "parameters": {
@@ -2122,7 +2122,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026072606"
+          "cycle": "2026072612"
         },
         "Atmosphere": {
           "parameters": {
@@ -2456,7 +2456,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026072606"
+          "cycle": "2026072612"
         },
         "Atmosphere": {
           "parameters": {
@@ -2790,7 +2790,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026072606"
+          "cycle": "2026072612"
         },
         "Atmosphere": {
           "parameters": {
@@ -3008,10 +3008,10 @@
       }
     }
   },
-  "cycle": "2026072606",
-  "updated": "2026072606",
+  "cycle": "2026072612",
+  "updated": "2026072612",
   "cycles": {
-    "gfswave": "2026072606",
+    "gfswave": "2026072612",
     "gfsatmos": "2026072606",
     "hycom": "2026072508"
   },
@@ -3023,11 +3023,11 @@
       "lon": 106.6833,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-07-26T15:33:41Z",
+      "generated_at": "2026-07-26T20:47:38Z",
       "cycles": {
-        "gfswave": "2026072606",
-        "gfsatmos": "2026072606",
+        "gfswave": "2026072612",
         "hycom": "2026072508",
+        "gfsatmos": "2026072606",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3065,11 +3065,11 @@
       "lon": 106.7075,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-07-26T15:33:41Z",
+      "generated_at": "2026-07-26T20:47:38Z",
       "cycles": {
-        "gfswave": "2026072606",
-        "gfsatmos": "2026072606",
+        "gfswave": "2026072612",
         "hycom": "2026072508",
+        "gfsatmos": "2026072606",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3107,11 +3107,11 @@
       "lon": 100.8833,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-07-26T15:33:41Z",
+      "generated_at": "2026-07-26T20:47:38Z",
       "cycles": {
-        "gfswave": "2026072606",
-        "gfsatmos": "2026072606",
+        "gfswave": "2026072612",
         "hycom": "2026072508",
+        "gfsatmos": "2026072606",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3149,11 +3149,11 @@
       "lon": 120.9544,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-07-26T15:33:41Z",
+      "generated_at": "2026-07-26T20:47:38Z",
       "cycles": {
-        "gfswave": "2026072606",
-        "gfsatmos": "2026072606",
+        "gfswave": "2026072612",
         "hycom": "2026072508",
+        "gfsatmos": "2026072606",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3191,11 +3191,11 @@
       "lon": 101.3929,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-07-26T15:33:41Z",
+      "generated_at": "2026-07-26T20:47:38Z",
       "cycles": {
-        "gfswave": "2026072606",
-        "gfsatmos": "2026072606",
+        "gfswave": "2026072612",
         "hycom": "2026072508",
+        "gfsatmos": "2026072606",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3233,11 +3233,11 @@
       "lon": 103.82,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-07-26T15:33:41Z",
+      "generated_at": "2026-07-26T20:47:38Z",
       "cycles": {
-        "gfswave": "2026072606",
-        "gfsatmos": "2026072606",
+        "gfswave": "2026072612",
         "hycom": "2026072508",
+        "gfsatmos": "2026072606",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3275,11 +3275,11 @@
       "lon": 112.7228,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-07-26T15:33:41Z",
+      "generated_at": "2026-07-26T20:47:38Z",
       "cycles": {
-        "gfswave": "2026072606",
-        "gfsatmos": "2026072606",
+        "gfswave": "2026072612",
         "hycom": "2026072508",
+        "gfsatmos": "2026072606",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3317,11 +3317,11 @@
       "lon": 106.8865,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-07-26T15:33:41Z",
+      "generated_at": "2026-07-26T20:47:38Z",
       "cycles": {
-        "gfswave": "2026072606",
-        "gfsatmos": "2026072606",
+        "gfswave": "2026072612",
         "hycom": "2026072508",
+        "gfsatmos": "2026072606",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3354,10 +3354,9 @@
     }
   ],
   "route": {
-    "generated_at": "2026-07-26T15:34:10Z",
+    "generated_at": "2026-07-26T20:47:59Z",
     "cycles": {
-      "gfswave": "2026072606",
-      "hycom": "2026072508"
+      "gfswave": "2026072612"
     },
     "lane_source": "grid",
     "grid_cells": 3315,
@@ -3368,7 +3367,7 @@
     "hours_last": "F072"
   },
   "status": {
-    "generated_at": "2026-07-26T15:34:10Z",
+    "generated_at": "2026-07-26T20:47:59Z",
     "forecast": {
       "max_hours": 72,
       "hour_step": 3
@@ -3388,10 +3387,9 @@
         "id": "route_forecast",
         "label": "Route Forecast",
         "state": "operational",
-        "generated_at": "2026-07-26T15:34:10Z",
+        "generated_at": "2026-07-26T20:47:59Z",
         "cycles": {
-          "gfswave": "2026072606",
-          "hycom": "2026072508"
+          "gfswave": "2026072612"
         },
         "lane_source": "grid",
         "grid_cells": 3315,
@@ -3406,7 +3404,7 @@
       "gfswave": {
         "label": "GFS Wave",
         "source": "GFS Wave 0.25deg",
-        "cycle": "2026072606",
+        "cycle": "2026072612",
         "products": [
           "wind",
           "swh",
