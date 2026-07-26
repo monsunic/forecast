@@ -10,8 +10,6 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
 from shapely.geometry import box, mapping
 
@@ -39,39 +37,11 @@ def generate_logo():
     print(f"[INFO] Wrote {out}")
 
 
-def generate_site_ports_map():
-    """Generate a Southeast Asia base map for port markers."""
-    MAPS_DIR.mkdir(parents=True, exist_ok=True)
-    out = MAPS_DIR / "site_ports.webp"
-
-    # The 33° × 35° figure ratio matches the PlateCarree extent. Keeping the axes
-    # edge-to-edge is important: browser marker percentages are mapped against
-    # these same geographic bounds.
-    fig = plt.figure(figsize=(9.4, 10), dpi=120)
-    ax = fig.add_axes([0, 0, 1, 1], projection=ccrs.PlateCarree())
-    ax.set_extent([95, 128, -11, 24], crs=ccrs.PlateCarree())
-    ax.set_facecolor("#A9C8E8")
-    ax.add_feature(cfeature.LAND, facecolor="#D8E5C1", edgecolor="#405568", linewidth=0.6)
-    ax.add_feature(cfeature.BORDERS, edgecolor="#7A8A96", linewidth=0.35)
-    ax.coastlines(resolution="50m", color="#405568", linewidth=0.65)
-    ax.gridlines(
-        crs=ccrs.PlateCarree(),
-        draw_labels=False,
-        linewidth=0.3,
-        color="white",
-        alpha=0.45,
-        linestyle="--",
-    )
-
-    fig.savefig(out, format="webp", dpi=120, bbox_inches=None, pad_inches=0, facecolor="white")
-    plt.close(fig)
-    print(f"[INFO] Wrote {out}")
-
-
 def generate_site_countries_geojson():
     """Export clipped country polygons for the tile-free interactive site map."""
     MAPS_DIR.mkdir(parents=True, exist_ok=True)
     out = MAPS_DIR / "site_countries.geojson"
+    # Matches SITE_MAP_BOUNDS in src/main.js: [[-11, 95], [24, 128]]
     bounds = box(95, -11, 128, 24)
     shp = shpreader.natural_earth(
         resolution="50m",
@@ -110,5 +80,4 @@ def generate_site_countries_geojson():
 
 if __name__ == "__main__":
     generate_logo()
-    generate_site_ports_map()
     generate_site_countries_geojson()

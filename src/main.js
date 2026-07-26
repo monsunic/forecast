@@ -1302,7 +1302,13 @@
         setTimeout(() => URL.revokeObjectURL(url), 2000);
     }
 
-    /** Stitch on-screen Chart.js canvases so download matches the web view. */
+    /** Stitch on-screen Chart.js canvases so download matches the web view.
+
+     * Canonical download path: live canvas export (what the user sees).
+     * Static assets/sites/{id}/charts.webp is a pipeline fallback for cold
+     * loads / when Chart.js has not rendered yet — keep matplotlib layout in
+     * sync with SITE_CHART_GROUPS when changing axes or series.
+     */
     async function downloadLiveSiteCharts() {
         const site = siteDocCurrent?.site || {};
         const filename = `${site.id || 'site'}_charts.webp`;
