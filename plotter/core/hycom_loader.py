@@ -7,7 +7,10 @@ Ocean handlers expect after renaming to water_temp / salinity / water_u / water_
 
 from __future__ import annotations
 
+import shutil
 import tempfile
+import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -24,6 +27,14 @@ NCSS_ICE_BEST = (
 HYCOM_BBOX = (90.0, 150.0, -20.0, 25.0)  # west, east, south, north
 
 CACHE_DIR = Path(tempfile.gettempdir()) / "nusawave_hycom_cache"
+
+# NCSS occasionally accepts a connection and then stalls forever (the failure
+# mode that burned the first 3-hourly production run). Bound each attempt and
+# retry a few times before giving up on that forecast hour.
+DOWNLOAD_TIMEOUT_SEC = 180
+DOWNLOAD_RETRIES = 3
+DOWNLOAD_RETRY_BACKOFF_SEC = 10
+MIN_DOWNLOAD_BYTES = 1000
 
 
 def pick_latest_hycom_cycle() -> str:
@@ -57,15 +68,61 @@ def hycom_ncss_url(cycle: str, forecast_hour: int, bbox=None) -> str:
     return f"{NCSS_ICE_BEST}?{urlencode(params)}"
 
 
-def _download(url: str, cache_path: Path) -> Path:
+def _download(
+    url: str,
+    cache_path: Path,
+    *,
+    timeout: float = DOWNLOAD_TIMEOUT_SEC,
+    retries: int = DOWNLOAD_RETRIES,
+) -> Path:
+    """Fetch ``url`` into ``cache_path`` with a socket timeout and retries.
+
+    Writes to a sibling ``.partial`` file first, then renames, so a killed or
+    timed-out attempt never leaves a corrupt cache entry that later runs would
+    happily reopen.
+    """
     cache_path.parent.mkdir(parents=True, exist_ok=True)
-    if not cache_path.exists():
-        print(f"[INFO] Downloading {url}")
-        urllib.request.urlretrieve(url, cache_path)
-        if cache_path.stat().st_size < 1000:
-            cache_path.unlink(missing_ok=True)
-            raise RuntimeError(f"Downloaded file too small (likely error page): {url}")
-    return cache_path
+    if cache_path.exists() and cache_path.stat().st_size >= MIN_DOWNLOAD_BYTES:
+        return cache_path
+
+    tmp_path = cache_path.with_suffix(cache_path.suffix + ".partial")
+    last_error: Exception | None = None
+    attempts = max(1, int(retries))
+
+    for attempt in range(1, attempts + 1):
+        tmp_path.unlink(missing_ok=True)
+        print(f"[INFO] Downloading {url} (attempt {attempt}/{attempts})")
+        try:
+            with urllib.request.urlopen(url, timeout=timeout) as resp, open(
+                tmp_path, "wb"
+            ) as out:
+                shutil.copyfileobj(resp, out, length=1024 * 1024)
+
+            size = tmp_path.stat().st_size if tmp_path.exists() else 0
+            if size < MIN_DOWNLOAD_BYTES:
+                tmp_path.unlink(missing_ok=True)
+                raise RuntimeError(
+                    f"Downloaded file too small ({size} bytes, likely error page): {url}"
+                )
+
+            tmp_path.replace(cache_path)
+            return cache_path
+        except (
+            TimeoutError,
+            urllib.error.URLError,
+            urllib.error.HTTPError,
+            OSError,
+            RuntimeError,
+        ) as exc:
+            last_error = exc
+            tmp_path.unlink(missing_ok=True)
+            print(f"[WARN] HYCOM download failed (attempt {attempt}/{attempts}): {exc}")
+            if attempt < attempts:
+                time.sleep(DOWNLOAD_RETRY_BACKOFF_SEC * attempt)
+
+    raise RuntimeError(
+        f"HYCOM download failed after {attempts} attempt(s): {url}"
+    ) from last_error
 
 
 def _normalize_coords(da: xr.DataArray) -> xr.DataArray:
@@ -136,20 +193,20 @@ def load_hycom_forecast(cycle: str, forecast_hour: int, cache: bool = True) -> x
     """Load one HYCOM surface forecast hour as a handler-compatible Dataset."""
     url = hycom_ncss_url(cycle, forecast_hour)
     if cache:
-        cache_path = (
-            CACHE_DIR / cycle / f"f{forecast_hour:03d}_sfc.nc"
-        )
-        path = _download(url, cache_path)
+        cache_path = CACHE_DIR / cycle / f"f{forecast_hour:03d}_sfc.nc"
     else:
-        tmp = tempfile.NamedTemporaryFile(suffix=".nc", delete=False)
-        urllib.request.urlretrieve(url, tmp.name)
-        path = Path(tmp.name)
+        cache_path = Path(
+            tempfile.NamedTemporaryFile(suffix=".nc", delete=False).name
+        )
+    path = _download(url, cache_path)
 
     raw = xr.open_dataset(path)
     try:
         return normalize_hycom_dataset(raw)
     finally:
         raw.close()
+        if not cache:
+            path.unlink(missing_ok=True)
 
 
 def load_hycom_cycle(cycle: str, max_hours: int, hour_step: int = 1) -> xr.Dataset:

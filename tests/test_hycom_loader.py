@@ -78,6 +78,95 @@ def test_hycom_variable_map_has_source():
     assert VARIABLE_MAP["source"]
 
 
+def test_download_retries_then_succeeds(tmp_path, monkeypatch):
+    from plotter.core import hycom_loader as mod
+
+    dest = tmp_path / "f000_sfc.nc"
+    calls = {"n": 0}
+
+    class FakeResp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self, size=-1):
+            return b"x" * 2000
+
+    def fake_urlopen(url, timeout=None):
+        calls["n"] += 1
+        assert timeout == mod.DOWNLOAD_TIMEOUT_SEC
+        if calls["n"] < 3:
+            raise TimeoutError("simulated stall")
+        return FakeResp()
+
+    monkeypatch.setattr(mod.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(mod.time, "sleep", lambda *_: None)
+    monkeypatch.setattr(mod.shutil, "copyfileobj", lambda src, dst, length=None: dst.write(src.read()))
+
+    path = mod._download("https://example.test/hycom", dest, retries=3)
+    assert path == dest
+    assert dest.is_file()
+    assert dest.stat().st_size >= mod.MIN_DOWNLOAD_BYTES
+    assert calls["n"] == 3
+    assert not list(tmp_path.glob("*.partial"))
+
+
+def test_download_fails_after_retries(tmp_path, monkeypatch):
+    from plotter.core import hycom_loader as mod
+
+    dest = tmp_path / "f000_sfc.nc"
+
+    def always_timeout(url, timeout=None):
+        raise TimeoutError("still stalled")
+
+    monkeypatch.setattr(mod.urllib.request, "urlopen", always_timeout)
+    monkeypatch.setattr(mod.time, "sleep", lambda *_: None)
+
+    with pytest.raises(RuntimeError, match="failed after 2"):
+        mod._download("https://example.test/hycom", dest, retries=2)
+    assert not dest.exists()
+    assert not list(tmp_path.glob("*.partial"))
+
+
+def test_download_rejects_tiny_payload(tmp_path, monkeypatch):
+    from plotter.core import hycom_loader as mod
+
+    dest = tmp_path / "f000_sfc.nc"
+
+    class TinyResp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self, size=-1):
+            return b"err"
+
+    monkeypatch.setattr(mod.urllib.request, "urlopen", lambda *a, **k: TinyResp())
+    monkeypatch.setattr(mod.time, "sleep", lambda *_: None)
+    monkeypatch.setattr(mod.shutil, "copyfileobj", lambda src, dst, length=None: dst.write(src.read()))
+
+    with pytest.raises(RuntimeError, match="failed after 1"):
+        mod._download("https://example.test/hycom", dest, retries=1)
+    assert not dest.exists()
+
+
+def test_download_reuses_valid_cache(tmp_path, monkeypatch):
+    from plotter.core import hycom_loader as mod
+
+    dest = tmp_path / "f000_sfc.nc"
+    dest.write_bytes(b"y" * 2000)
+
+    def boom(*a, **k):
+        raise AssertionError("should not hit the network")
+
+    monkeypatch.setattr(mod.urllib.request, "urlopen", boom)
+    assert mod._download("https://example.test/hycom", dest) == dest
+
+
 def test_seacurrent_handler_scales_to_cms():
     from types import SimpleNamespace
     from unittest.mock import MagicMock
