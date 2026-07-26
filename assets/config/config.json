@@ -3446,5 +3446,124 @@
     "gfswave": "2026072506",
     "gfsatmos": "2026072506",
     "hycom": "2026072405"
+  },
+  "sites": [
+    {
+      "id": "singapore",
+      "name": "Port of Singapore",
+      "lat": 1.2788,
+      "lon": 103.7566,
+      "has_data": false,
+      "has_chart": false
+    },
+    {
+      "id": "port_klang",
+      "name": "Port Klang",
+      "lat": 2.9996,
+      "lon": 101.3929,
+      "has_data": false,
+      "has_chart": false
+    },
+    {
+      "id": "tanjung_pelepas",
+      "name": "Pelabuhan Tanjung Pelepas",
+      "lat": 1.3497,
+      "lon": 103.5509,
+      "has_data": false,
+      "has_chart": false
+    },
+    {
+      "id": "laem_chabang",
+      "name": "Laem Chabang Port",
+      "lat": 13.0833,
+      "lon": 100.8833,
+      "has_data": false,
+      "has_chart": false
+    },
+    {
+      "id": "tanjung_priok",
+      "name": "Tanjung Priok Port",
+      "lat": -6.104,
+      "lon": 106.8865,
+      "has_data": false,
+      "has_chart": false
+    }
+  ],
+  "status": {
+    "generated_at": "2026-07-26T03:04:09Z",
+    "forecast": {
+      "max_hours": 72,
+      "hour_step": 3
+    },
+    "services": [
+      {
+        "id": "map_forecast",
+        "label": "Map Forecast",
+        "state": "operational"
+      },
+      {
+        "id": "site_forecast",
+        "label": "Site Forecast",
+        "state": "planned"
+      },
+      {
+        "id": "route_forecast",
+        "label": "Route Forecast",
+        "state": "planned"
+      },
+      {
+        "id": "observation",
+        "label": "Observations",
+        "state": "planned"
+      }
+    ],
+    "datasets": {
+      "gfswave": {
+        "label": "GFS Wave",
+        "source": "GFS Wave 0.25deg",
+        "cycle": "2026072506",
+        "products": [
+          "wind",
+          "swh",
+          "swell"
+        ],
+        "regions": 9,
+        "hour_count": 25,
+        "hours_first": "F000",
+        "hours_last": "F072",
+        "state": "operational"
+      },
+      "gfsatmos": {
+        "label": "GFS Atmosphere",
+        "source": "GFS 0.25deg",
+        "cycle": "2026072506",
+        "products": [
+          "temp",
+          "relhum",
+          "mslp_wind",
+          "rain_rh700"
+        ],
+        "regions": 9,
+        "hour_count": 25,
+        "hours_first": "F000",
+        "hours_last": "F072",
+        "state": "operational"
+      },
+      "hycom": {
+        "label": "HYCOM Ocean",
+        "source": "HYCOM ESPC-D-V02",
+        "cycle": "2026072405",
+        "products": [
+          "seatemp",
+          "seasalt",
+          "seacurrent"
+        ],
+        "regions": 9,
+        "hour_count": 25,
+        "hours_first": "F000",
+        "hours_last": "F072",
+        "state": "operational"
+      }
+    }
   }
 }

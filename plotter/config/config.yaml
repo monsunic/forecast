@@ -29,6 +29,32 @@ regions:
 
   southeast_asia:
     bbox: [90, 150, -20, 25]
+
+# ========================================================
+# SITE FORECAST LOCATIONS (fixed ports)
+# ========================================================
+sites:
+  singapore:
+    name: Port of Singapore
+    lat: 1.2788
+    lon: 103.7566
+  port_klang:
+    name: Port Klang
+    lat: 2.9996
+    lon: 101.3929
+  tanjung_pelepas:
+    name: Pelabuhan Tanjung Pelepas
+    lat: 1.3497
+    lon: 103.5509
+  laem_chabang:
+    name: Laem Chabang Port
+    lat: 13.0833
+    lon: 100.8833
+  tanjung_priok:
+    name: Tanjung Priok Port
+    lat: -6.1040
+    lon: 106.8865
+
 # ========================================================
 # FORECAST RUN SETTINGS
 # ========================================================
@@ -37,6 +63,12 @@ forecast:
   # Default: 3-day forecast at 3-hourly (F000, F003, …, F072).
   max_hours: 72
   hour_step: 3
+  # Per-dataset stride overrides (each must be a multiple of hour_step, so the
+  # 3-hourly schedule stays a superset). Ocean surface fields evolve slowly, so
+  # HYCOM renders 6-hourly (13 frames, not 25): roughly halves its runtime and
+  # its exposure to NCSS download stalls, while waves/atmosphere stay 3-hourly.
+  dataset_hour_step:
+    hycom: 6
 
 # ========================================================
 # GLOBAL FALLBACK DEFAULTS

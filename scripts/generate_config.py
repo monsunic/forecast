@@ -9,6 +9,7 @@ import argparse
 import json
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -21,11 +22,14 @@ from plotter.core.config_loader import (
     get_forecast_hours,
     get_hour_step,
     get_products,
+    get_sites,
     load_param_config,
 )
+from plotter.core.utils import load_model_params
 
 CONFIG_PATH = ROOT / "assets" / "config" / "config.json"
 MAPS_ROOT = ROOT / "assets" / "maps"
+SITES_ROOT = ROOT / "assets" / "sites"
 
 ALL_REGIONS = [
     "malacca_strait",
@@ -44,6 +48,23 @@ FILE_PATTERN = re.compile(r"^(?P<param>[a-z0-9_]+)_(?P<hour>\d{3})\.webp$")
 
 # Stable forecast-type order for the UI dropdown.
 FORECAST_TYPE_ORDER = ["Wind and Waves", "Atmosphere", "Ocean"]
+
+DATASET_LABELS = {
+    "gfswave": "GFS Wave",
+    "gfsatmos": "GFS Atmosphere",
+    "hycom": "HYCOM Ocean",
+    "cmems": "CMEMS",
+    "ecmwfatmos": "ECMWF Atmosphere",
+    "ecmwfwave": "ECMWF Wave",
+}
+
+# Product-surface services shown on the Status page (Map is live; others planned).
+STATUS_SERVICES = [
+    {"id": "map_forecast", "label": "Map Forecast", "state": "operational"},
+    {"id": "site_forecast", "label": "Site Forecast", "state": "planned"},
+    {"id": "route_forecast", "label": "Route Forecast", "state": "planned"},
+    {"id": "observation", "label": "Observations", "state": "planned"},
+]
 
 
 def product_catalog():
@@ -65,6 +86,139 @@ def product_catalog():
             }
         )
     return catalog
+
+
+def _dataset_source(dataset: str) -> str:
+    try:
+        return str(load_model_params(dataset).get("source") or dataset)
+    except (ValueError, ModuleNotFoundError):
+        return dataset
+
+
+def build_status(
+    datasets,
+    scanned,
+    catalog_by_dataset,
+    cycles,
+    max_hours: int,
+    hour_step: int,
+    generated_at: Optional[str] = None,
+    sites_with_data: int = 0,
+):
+    """Build the Status-page payload written into config.json."""
+    canon = set(canonical_hours(max_hours, hour_step))
+    dataset_status = {}
+
+    for ds in datasets:
+        region_scan = scanned.get(ds, {}) or {}
+        regions_with_data = sorted(
+            rid for rid, params in region_scan.items() if params
+        )
+        # Only report datasets that are part of the active pipeline: those with
+        # deployed maps or an explicit cycle. Catalog-only datasets (e.g. cmems
+        # with no maps and no cycle) are skipped so they don't clutter Status.
+        if not regions_with_data and not (cycles or {}).get(ds):
+            continue
+        catalog_entries = catalog_by_dataset.get(ds, [])
+        catalog_slugs = [e["slug"] for e in catalog_entries]
+
+        deployed = []
+        for slug in catalog_slugs:
+            if any(slug in (params or {}) for params in region_scan.values()):
+                deployed.append(slug)
+        # Fall back: any scanned param folders when catalog has no entries.
+        if not catalog_slugs:
+            seen = set()
+            for params in region_scan.values():
+                seen.update(params.keys())
+            deployed = sorted(seen)
+
+        all_hours = set()
+        for params in region_scan.values():
+            for slug in deployed or list(params.keys()):
+                for h in params.get(slug, []):
+                    if h in canon:
+                        all_hours.add(h)
+        hours_sorted = sorted(all_hours)
+        has_maps = bool(deployed and regions_with_data)
+
+        dataset_status[ds] = {
+            "label": DATASET_LABELS.get(ds, ds),
+            "source": _dataset_source(ds),
+            "cycle": (cycles or {}).get(ds) or None,
+            "products": deployed,
+            "regions": len(regions_with_data),
+            "hour_count": len(hours_sorted),
+            "hours_first": f"F{hours_sorted[0]}" if hours_sorted else None,
+            "hours_last": f"F{hours_sorted[-1]}" if hours_sorted else None,
+            "state": "operational" if has_maps else "unavailable",
+        }
+
+    services = []
+    for svc in STATUS_SERVICES:
+        entry = dict(svc)
+        if entry["id"] == "site_forecast":
+            entry["state"] = "operational" if sites_with_data > 0 else "planned"
+        services.append(entry)
+
+    return {
+        "generated_at": generated_at
+        or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "forecast": {"max_hours": max_hours, "hour_step": hour_step},
+        "services": services,
+        "datasets": dataset_status,
+    }
+
+
+def scan_sites(sites_root: Optional[Path] = None):
+    """Return site catalog entries with has_data / chart flags from disk.
+
+    Merges YAML registry with ``assets/sites/{id}/forecast.json`` presence.
+    """
+    root = sites_root or SITES_ROOT
+    registry = {s["id"]: s for s in get_sites()}
+    # Include any on-disk site folders even if missing from YAML (forward-compat).
+    if root.is_dir():
+        for d in sorted(root.iterdir()):
+            if d.is_dir() and not d.name.startswith(".") and d.name not in registry:
+                registry[d.name] = {
+                    "id": d.name,
+                    "name": d.name.replace("_", " ").title(),
+                    "lat": None,
+                    "lon": None,
+                }
+
+    sites = []
+    for site_id, meta in registry.items():
+        forecast_path = root / site_id / "forecast.json"
+        chart_path = root / site_id / "charts.webp"
+        has_data = forecast_path.is_file()
+        entry = {
+            "id": site_id,
+            "name": meta.get("name") or site_id,
+            "lat": meta.get("lat"),
+            "lon": meta.get("lon"),
+            "has_data": has_data,
+            "has_chart": chart_path.is_file(),
+        }
+        if has_data:
+            try:
+                doc = json.loads(forecast_path.read_text())
+                site_meta = doc.get("site") or {}
+                if site_meta.get("name"):
+                    entry["name"] = site_meta["name"]
+                if site_meta.get("lat") is not None:
+                    entry["lat"] = site_meta["lat"]
+                if site_meta.get("lon") is not None:
+                    entry["lon"] = site_meta["lon"]
+                entry["generated_at"] = doc.get("generated_at")
+                entry["cycles"] = doc.get("cycles") or {}
+                entry["hours"] = doc.get("hours") or []
+            except (OSError, json.JSONDecodeError, TypeError):
+                pass
+        sites.append(entry)
+    return sites
+
 
 
 def scan_dataset(dataset_dir: Path):
@@ -249,7 +403,33 @@ def build_config(
     if cycles:
         config["cycles"] = {k: v for k, v in cycles.items() if v}
 
+    sites = scan_sites()
+    config["sites"] = sites
+    sites_with_data = sum(1 for s in sites if s.get("has_data"))
+
+    config["status"] = build_status(
+        datasets=datasets,
+        scanned=scanned,
+        catalog_by_dataset=catalog_by_dataset,
+        cycles=cycles or {},
+        max_hours=max_hours,
+        hour_step=hour_step,
+        sites_with_data=sites_with_data,
+    )
+
     return config
+
+
+def sync_status_cycles(config):
+    """Keep status.datasets[].cycle aligned with top-level cycles after stamping."""
+    status = config.get("status")
+    if not isinstance(status, dict):
+        return
+    cycles = config.get("cycles") or {}
+    datasets = status.get("datasets") or {}
+    for ds, cycle in cycles.items():
+        if ds in datasets and cycle:
+            datasets[ds]["cycle"] = cycle
 
 
 def main():
@@ -327,6 +507,8 @@ def main():
                     ft["cycle"] = args.cycle
                 if ds:
                     config["cycles"].setdefault(ds, args.cycle)
+
+    sync_status_cycles(config)
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)

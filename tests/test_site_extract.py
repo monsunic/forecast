@@ -1,0 +1,124 @@
+"""Tests for site forecast nearest-point extraction."""
+
+import numpy as np
+import xarray as xr
+
+
+def test_sample_point_nearest():
+    from plotter.core.site_extract import sample_point
+
+    lon = np.array([103.5, 103.75, 104.0])
+    lat = np.array([1.0, 1.25, 1.5])
+    data = np.arange(9, dtype=float).reshape(3, 3)
+    da = xr.DataArray(data, coords={"lat": lat, "lon": lon}, dims=("lat", "lon"))
+
+    pt = sample_point(da, lat=1.28, lon=103.76)
+    assert float(pt.values) == float(da.sel(lat=1.25, lon=103.75).values)
+    assert float(pt.lat) == 1.25
+    assert float(pt.lon) == 103.75
+
+
+def test_sample_point_descending_lat():
+    from plotter.core.site_extract import sample_point
+
+    lon = np.array([100.0, 101.0])
+    lat = np.array([2.0, 1.0])  # descending
+    data = np.array([[10.0, 20.0], [30.0, 40.0]])
+    da = xr.DataArray(data, coords={"lat": lat, "lon": lon}, dims=("lat", "lon"))
+    pt = sample_point(da, lat=1.1, lon=100.2)
+    assert float(pt.lat) == 1.0
+    assert float(pt.lon) == 100.0
+    assert float(pt.values) == 30.0
+
+
+def test_uv_speed_dir_wind_and_current():
+    from plotter.core.site_extract import _uv_speed_dir, WIND_KT_SCALE, CURRENT_CMS_SCALE
+
+    # Pure +v (northward) wind in m/s → meteo "from" is south (180°)
+    speed, direction = _uv_speed_dir(0.0, 1.0, WIND_KT_SCALE, meteorological=True)
+    assert abs(speed - WIND_KT_SCALE) < 1e-6
+    assert abs(direction - 180.0) < 1e-6
+
+    # Pure +u (eastward) current → ocean "to" is east (90°)
+    speed, direction = _uv_speed_dir(1.0, 0.0, CURRENT_CMS_SCALE, meteorological=False)
+    assert abs(speed - CURRENT_CMS_SCALE) < 1e-6
+    assert abs(direction - 90.0) < 1e-6
+
+
+def test_append_hour_to_series():
+    from plotter.core.site_extract import append_hour_to_series, empty_series_shell
+
+    series = empty_series_shell()
+    append_hour_to_series(
+        series,
+        {
+            "wind_speed": 12.5,
+            "wind_dir": 90.0,
+            "swh": 1.2,
+            "swh_dir": 180.0,
+            "swell": 0.8,
+            "swell_dir": 200.0,
+            "sst": 29.1,
+            "current": 35.0,
+            "current_dir": 45.0,
+            "rain": 0.1,
+            "temp": 28.0,
+            "rh": 80.0,
+        },
+    )
+    assert series["wind_speed"]["values"] == [12.5]
+    assert series["wind_speed"]["dir_deg"] == [90.0]
+    assert series["sst"]["values"] == [29.1]
+    assert "dir_deg" not in series["sst"]
+
+
+def test_build_site_forecast_doc_schema():
+    from plotter.core.site_extract import build_site_forecast_doc, empty_series_shell
+
+    series = empty_series_shell()
+    series["wind_speed"]["values"] = [10.0, 11.0]
+    series["wind_speed"]["dir_deg"] = [90.0, 100.0]
+    doc = build_site_forecast_doc(
+        site={"id": "singapore", "name": "Port of Singapore", "lat": 1.2788, "lon": 103.7566},
+        cycles={"gfswave": "2026072506"},
+        hours=["F000", "F003"],
+        valid_times=["2026-07-25T06:00:00Z", "2026-07-25T09:00:00Z"],
+        series=series,
+        grid_points={"gfswave": {"lat": 1.25, "lon": 103.75}},
+        generated_at="2026-07-26T02:00:00Z",
+    )
+    assert doc["site"]["id"] == "singapore"
+    assert doc["hours"] == ["F000", "F003"]
+    assert doc["series"]["wind_speed"]["unit"] == "kt"
+    assert len(doc["series"]["wind_speed"]["values"]) == 2
+
+
+def test_extract_gfswave_hour_from_synthetic_ds():
+    from plotter.core.site_extract import extract_gfswave_hour
+
+    lon = np.array([103.5, 103.75, 104.0])
+    lat = np.array([1.0, 1.25, 1.5])
+    shape = (1, 3, 3)
+    ones = np.ones(shape, dtype=float)
+
+    ds = xr.Dataset(
+        {
+            "ugrdsfc": (("time", "lat", "lon"), ones * 0.0),
+            "vgrdsfc": (("time", "lat", "lon"), ones * 5.0),  # 5 m/s northward
+            "htsgwsfc": (("time", "lat", "lon"), ones * 1.5),
+            "dirpwsfc": (("time", "lat", "lon"), ones * 210.0),
+            "swell_1": (("time", "lat", "lon"), ones * 0.9),
+            "swdir_1": (("time", "lat", "lon"), ones * 200.0),
+        },
+        coords={
+            "time": [np.datetime64("2026-07-25T06:00")],
+            "lat": lat,
+            "lon": lon,
+        },
+    )
+    out = extract_gfswave_hour(ds, lat=1.2788, lon=103.7566)
+    assert out["swh"] == 1.5
+    assert out["swell"] == 0.9
+    assert out["wind_speed"] is not None
+    assert abs(out["wind_dir"] - 180.0) < 1e-6
+    assert "gfswave" in out["_grid"]

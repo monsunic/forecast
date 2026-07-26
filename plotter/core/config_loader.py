@@ -45,6 +45,23 @@ def get_hour_step():
     return int(load_param_config().get("forecast", {}).get("hour_step", 3))
 
 
+def get_dataset_hour_step(dataset, hour_step=None):
+    """Lead-time stride for a single dataset.
+
+    Uses ``forecast.dataset_hour_step.<dataset>`` when present, else falls back
+    to ``hour_step`` (or the global ``forecast.hour_step``). Overrides are meant
+    to be coarser than the global step so slow-moving datasets render fewer
+    frames while the global 3-hourly schedule stays a superset for the frontend.
+    """
+    forecast = load_param_config().get("forecast", {})
+    overrides = forecast.get("dataset_hour_step") or {}
+    if dataset in overrides:
+        return max(1, int(overrides[dataset]))
+    if hour_step is not None:
+        return max(1, int(hour_step))
+    return get_hour_step()
+
+
 def get_forecast_hours(max_hours=None, hour_step=None):
     """Return lead times to render/publish, e.g. [0, 3, 6, …, 72].
 
@@ -71,6 +88,29 @@ def get_products():
 def get_product(slug):
     """Return product metadata for a single slug, or empty dict."""
     return get_products().get(slug, {})
+
+
+def get_sites():
+    """Return site forecast locations as a list of dicts.
+
+    Each entry: ``{id, name, lat, lon}`` from ``sites:`` in config.yaml.
+    """
+    raw = load_param_config().get("sites") or {}
+    sites = []
+    for site_id, meta in raw.items():
+        if not isinstance(meta, dict):
+            continue
+        if "lat" not in meta or "lon" not in meta:
+            continue
+        sites.append(
+            {
+                "id": str(site_id),
+                "name": str(meta.get("name") or site_id),
+                "lat": float(meta["lat"]),
+                "lon": float(meta["lon"]),
+            }
+        )
+    return sites
 
 
 def apply_product_config(config, slug, yaml_cfg=None):

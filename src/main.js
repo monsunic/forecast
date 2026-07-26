@@ -17,6 +17,9 @@
         if (id === 'map') {
             requestAnimationFrame(fitMapToViewport);
         }
+        if (id === 'site') {
+            ensureSiteForecastReady();
+        }
     }
 
     function goToSection(id) {
@@ -821,6 +824,506 @@
 
 
     /* ------------------------------------------------------------
+     * Site Forecast (lazy Chart.js + per-site JSON)
+     * ------------------------------------------------------------ */
+    const siteSelect = document.getElementById('siteSelect');
+    const sitePanel = document.getElementById('sitePanel');
+    const siteSummary = document.getElementById('siteSummary');
+    const siteDownloadBtn = document.getElementById('siteDownloadBtn');
+
+    const siteCache = new Map();
+    let siteAbort = null;
+    let siteCharts = [];
+    let chartJsPromise = null;
+    let siteUiReady = false;
+
+    const SITE_CHART_GROUPS = [
+        {
+            id: 'waves',
+            title: 'Waves & wind',
+            series: [
+                { key: 'wind_speed', label: 'Wind', color: '#0B74DE', yAxisID: 'y' },
+                { key: 'swh', label: 'SWH', color: '#0B2340', yAxisID: 'y1' },
+                { key: 'swell', label: 'Swell', color: '#5B8DEF', yAxisID: 'y1', dash: [5, 4] },
+            ],
+        },
+        {
+            id: 'ocean',
+            title: 'Ocean',
+            series: [
+                { key: 'sst', label: 'SST', color: '#C45C26', yAxisID: 'y' },
+                { key: 'current', label: 'Current', color: '#1F7A5C', yAxisID: 'y1' },
+            ],
+        },
+        {
+            id: 'weather',
+            title: 'Weather',
+            series: [
+                { key: 'rain', label: 'Rain', color: '#6BA3D6', yAxisID: 'y', type: 'bar' },
+                { key: 'temp', label: 'Temp', color: '#C0392B', yAxisID: 'y1' },
+                { key: 'rh', label: 'RH', color: '#7D3C98', yAxisID: 'y1', dash: [2, 3] },
+            ],
+        },
+    ];
+
+    function loadChartJs() {
+        if (window.Chart) return Promise.resolve(window.Chart);
+        if (chartJsPromise) return chartJsPromise;
+        chartJsPromise = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js';
+            s.async = true;
+            s.onload = () => resolve(window.Chart);
+            s.onerror = () => reject(new Error('Failed to load Chart.js'));
+            document.head.appendChild(s);
+        });
+        return chartJsPromise;
+    }
+
+    function destroySiteCharts() {
+        siteCharts.forEach(c => {
+            try { c.destroy(); } catch (_) { /* ignore */ }
+        });
+        siteCharts = [];
+    }
+
+    function formatSiteCoord(lat, lon) {
+        if (lat == null || lon == null) return '';
+        const ns = lat >= 0 ? 'N' : 'S';
+        const ew = lon >= 0 ? 'E' : 'W';
+        return `${Math.abs(lat).toFixed(4)}°${ns}, ${Math.abs(lon).toFixed(4)}°${ew}`;
+    }
+
+    function populateSiteSelect(cfg) {
+        if (!siteSelect) return;
+        const sites = (cfg?.sites || []).filter(s => s && s.id);
+        const withData = sites.filter(s => s.has_data);
+        siteSelect.innerHTML = '';
+        if (!withData.length) {
+            const o = document.createElement('option');
+            o.value = '';
+            o.textContent = 'No site data yet (next pipeline run)';
+            siteSelect.appendChild(o);
+            return;
+        }
+        withData.forEach(s => {
+            const o = document.createElement('option');
+            o.value = s.id;
+            o.textContent = s.name || s.id;
+            siteSelect.appendChild(o);
+        });
+        const preferred = localStorage.getItem('nw_site');
+        if (preferred && withData.some(s => s.id === preferred)) {
+            siteSelect.value = preferred;
+        }
+    }
+
+    function buildChartConfig(group, doc) {
+        const labels = doc.hours || [];
+        const datasets = [];
+        const units = {};
+        group.series.forEach(spec => {
+            const entry = doc.series?.[spec.key];
+            if (!entry || !Array.isArray(entry.values)) return;
+            if (!entry.values.some(v => v != null)) return;
+            units[spec.yAxisID] = entry.unit || '';
+            datasets.push({
+                type: spec.type || 'line',
+                label: `${spec.label}${entry.unit ? ` (${entry.unit})` : ''}`,
+                data: entry.values,
+                borderColor: spec.color,
+                backgroundColor: spec.type === 'bar' ? spec.color + '99' : spec.color,
+                borderDash: spec.dash || [],
+                yAxisID: spec.yAxisID,
+                tension: 0.25,
+                pointRadius: 0,
+                pointHoverRadius: 3,
+                borderWidth: 1.8,
+                fill: false,
+            });
+        });
+        if (!datasets.length) return null;
+
+        const scales = {
+            x: {
+                ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 12, font: { size: 10 } },
+                grid: { color: 'rgba(11,35,64,0.06)' },
+            },
+            y: {
+                type: 'linear',
+                position: 'left',
+                title: { display: !!units.y, text: units.y || '', font: { size: 10 } },
+                grid: { color: 'rgba(11,35,64,0.08)' },
+                ticks: { font: { size: 10 } },
+            },
+        };
+        if (datasets.some(d => d.yAxisID === 'y1')) {
+            scales.y1 = {
+                type: 'linear',
+                position: 'right',
+                title: { display: !!units.y1, text: units.y1 || '', font: { size: 10 } },
+                grid: { drawOnChartArea: false },
+                ticks: { font: { size: 10 } },
+            };
+        }
+
+        return {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { labels: { boxWidth: 12, font: { size: 11 } } },
+                    tooltip: {
+                        callbacks: {
+                            afterBody(items) {
+                                const idx = items[0]?.dataIndex;
+                                if (idx == null) return '';
+                                const lines = [];
+                                group.series.forEach(spec => {
+                                    const dir = doc.series?.[spec.key]?.dir_deg?.[idx];
+                                    if (dir != null && Number.isFinite(dir)) {
+                                        lines.push(`${spec.label} dir: ${Math.round(dir)}°`);
+                                    }
+                                });
+                                return lines;
+                            },
+                        },
+                    },
+                },
+                scales,
+            },
+        };
+    }
+
+    function renderSiteDoc(doc) {
+        if (!sitePanel) return;
+        destroySiteCharts();
+
+        const site = doc.site || {};
+        const cycles = doc.cycles || {};
+        const cycleBits = Object.entries(cycles).map(([k, v]) => `${k} ${v}`).join(' · ');
+        const gridBits = Object.entries(doc.grid_points || {}).map(([k, g]) => {
+            if (!g || g.lat == null) return null;
+            return `${k} grid ${formatSiteCoord(g.lat, g.lon)}`;
+        }).filter(Boolean).join(' · ');
+
+        const firstValid = (doc.valid_times || []).find(Boolean);
+        const lastValid = [...(doc.valid_times || [])].reverse().find(Boolean);
+        let range = '';
+        if (firstValid && lastValid) {
+            range = `${formatUtcStamp(new Date(firstValid))} → ${formatUtcStamp(new Date(lastValid))}`;
+        }
+
+        if (siteSummary) {
+            const parts = [
+                formatSiteCoord(site.lat, site.lon),
+                range,
+                cycleBits,
+                gridBits,
+            ].filter(Boolean);
+            siteSummary.textContent = parts.join('  ·  ');
+        }
+
+        if (siteDownloadBtn) {
+            if (doc._hasChart !== false) {
+                siteDownloadBtn.hidden = false;
+                siteDownloadBtn.href = `assets/sites/${site.id}/charts.webp`;
+                siteDownloadBtn.download = `${site.id}_charts.webp`;
+            } else {
+                siteDownloadBtn.hidden = true;
+            }
+        }
+
+        const blocks = SITE_CHART_GROUPS.map(group => {
+            const cfg = buildChartConfig(group, doc);
+            if (!cfg) return '';
+            return `<div class="site-chart-block">
+                <h3 class="site-chart-title">${group.title}</h3>
+                <div class="site-chart-wrap"><canvas id="siteChart_${group.id}" aria-label="${group.title} chart"></canvas></div>
+              </div>`;
+        }).filter(Boolean);
+
+        if (!blocks.length) {
+            sitePanel.innerHTML = '<p class="site-placeholder">No series available for this site yet.</p>';
+            return;
+        }
+
+        sitePanel.innerHTML = blocks.join('');
+
+        loadChartJs().then(Chart => {
+            SITE_CHART_GROUPS.forEach(group => {
+                const canvas = document.getElementById(`siteChart_${group.id}`);
+                if (!canvas) return;
+                const cfg = buildChartConfig(group, doc);
+                if (!cfg) return;
+                siteCharts.push(new Chart(canvas, cfg));
+            });
+        }).catch(err => {
+            console.error(err);
+            sitePanel.insertAdjacentHTML(
+                'beforeend',
+                '<p class="site-placeholder">Charts could not load. You can still use Download chart.</p>'
+            );
+        });
+    }
+
+    function loadSelectedSite() {
+        if (!siteSelect || !sitePanel) return;
+        const id = siteSelect.value;
+        if (!id) {
+            sitePanel.innerHTML = '<p class="site-placeholder">No site forecast data yet. It appears after the next pipeline run.</p>';
+            if (siteSummary) siteSummary.textContent = '';
+            if (siteDownloadBtn) siteDownloadBtn.hidden = true;
+            return;
+        }
+        localStorage.setItem('nw_site', id);
+
+        if (siteCache.has(id)) {
+            renderSiteDoc(siteCache.get(id));
+            return;
+        }
+
+        if (siteAbort) siteAbort.abort();
+        siteAbort = new AbortController();
+        sitePanel.innerHTML = '<p class="site-placeholder">Loading forecast…</p>';
+        if (siteDownloadBtn) siteDownloadBtn.hidden = true;
+
+        fetch(`assets/sites/${id}/forecast.json`, { signal: siteAbort.signal })
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then(doc => {
+                // Probe chart availability without blocking render.
+                const chartUrl = `assets/sites/${id}/charts.webp`;
+                return fetch(chartUrl, { method: 'HEAD' })
+                    .then(h => {
+                        doc._hasChart = h.ok;
+                        return doc;
+                    })
+                    .catch(() => {
+                        doc._hasChart = false;
+                        return doc;
+                    });
+            })
+            .then(doc => {
+                siteCache.set(id, doc);
+                renderSiteDoc(doc);
+            })
+            .catch(err => {
+                if (err.name === 'AbortError') return;
+                console.error('Site forecast load failed:', err);
+                sitePanel.innerHTML = `<p class="site-placeholder">Could not load forecast for this site.</p>`;
+                if (siteSummary) siteSummary.textContent = '';
+            });
+    }
+
+    function initSiteForecast(cfg) {
+        populateSiteSelect(cfg);
+        if (siteSelect && !siteSelect._nwBound) {
+            siteSelect.addEventListener('change', loadSelectedSite);
+            siteSelect._nwBound = true;
+        }
+        siteUiReady = true;
+        if (document.getElementById('site')?.classList.contains('active')) {
+            loadSelectedSite();
+        }
+    }
+
+    function ensureSiteForecastReady() {
+        if (!siteUiReady) return;
+        if (!sitePanel) return;
+        // First visit or empty panel → load current selection.
+        if (!sitePanel.querySelector('canvas') && siteSelect?.value) {
+            loadSelectedSite();
+        } else if (!siteSelect?.value) {
+            loadSelectedSite();
+        }
+    }
+
+
+    /* ------------------------------------------------------------
+     * Status panel (data update freshness from config.json)
+     * ------------------------------------------------------------ */
+    const statusPanel = document.getElementById('statusPanel');
+
+    // Max age (hours) before a dataset cycle is flagged stale in the UI.
+    const FRESHNESS_HOURS = {
+        gfswave: 12,
+        gfsatmos: 12,
+        hycom: 48,
+        cmems: 48,
+        default: 24,
+    };
+
+    const MONTHS_SHORT = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+
+    function parseCycleUtc(cycle) {
+        if (!cycle || !/^\d{10}$/.test(String(cycle))) return null;
+        const c = String(cycle);
+        return new Date(Date.UTC(
+            +c.slice(0, 4),
+            +c.slice(4, 6) - 1,
+            +c.slice(6, 8),
+            +c.slice(8, 10)
+        ));
+    }
+
+    function formatUtcStamp(d) {
+        if (!d || Number.isNaN(d.getTime())) return '—';
+        const hh = String(d.getUTCHours()).padStart(2, '0');
+        const mm = String(d.getUTCMinutes()).padStart(2, '0');
+        return `${MONTHS_SHORT[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()} ${hh}:${mm} UTC`;
+    }
+
+    function formatAgeHours(hours) {
+        if (hours == null || Number.isNaN(hours)) return '—';
+        if (hours < 1) return '<1h';
+        if (hours < 48) return `${Math.round(hours)}h`;
+        return `${(hours / 24).toFixed(1)}d`;
+    }
+
+    function freshnessForDataset(dsKey, cycle, deployState) {
+        if (deployState === 'unavailable') {
+            return { key: 'unavailable', label: 'Unavailable' };
+        }
+        const init = parseCycleUtc(cycle);
+        if (!init) {
+            return { key: 'unknown', label: 'Unknown' };
+        }
+        const ageH = (Date.now() - init.getTime()) / 3600000;
+        const limit = FRESHNESS_HOURS[dsKey] ?? FRESHNESS_HOURS.default;
+        if (ageH <= limit) {
+            return { key: 'fresh', label: 'Fresh', ageH };
+        }
+        return { key: 'stale', label: 'Stale', ageH };
+    }
+
+    function serviceStateLabel(state) {
+        if (state === 'operational') return 'Operational';
+        if (state === 'planned') return 'Planned';
+        if (state === 'degraded') return 'Degraded';
+        return state || '—';
+    }
+
+    function renderStatusPanel(cfg) {
+        if (!statusPanel) return;
+
+        const status = cfg?.status;
+        if (!status) {
+            // Fallback: derive a minimal view from top-level cycles.
+            const cycles = cfg?.cycles || {};
+            if (!Object.keys(cycles).length && !cfg?.cycle) {
+                statusPanel.innerHTML =
+                    '<p class="status-empty">No update metadata yet. Run the forecast pipeline to populate status.</p>';
+                return;
+            }
+            const rows = Object.entries(cycles).map(([ds, cycle]) => {
+                const fresh = freshnessForDataset(ds, cycle, 'operational');
+                const init = parseCycleUtc(cycle);
+                return `<tr>
+                    <td>${ds}</td>
+                    <td><code>${cycle || '—'}</code></td>
+                    <td>${formatUtcStamp(init)}</td>
+                    <td>${formatAgeHours(fresh.ageH)}</td>
+                    <td><span class="status-badge status-badge--${fresh.key}">${fresh.label}</span></td>
+                    <td>—</td>
+                </tr>`;
+            }).join('');
+            statusPanel.innerHTML = `
+                <p class="status-meta">Pipeline metadata incomplete — showing cycle stamps only.</p>
+                <div class="status-table-wrap">
+                  <table class="status-table">
+                    <thead>
+                      <tr>
+                        <th>Dataset</th><th>Cycle</th><th>Initial time</th>
+                        <th>Age</th><th>Freshness</th><th>Coverage</th>
+                      </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                  </table>
+                </div>`;
+            return;
+        }
+
+        const generated = status.generated_at
+            ? formatUtcStamp(new Date(status.generated_at))
+            : '—';
+        const fc = status.forecast || {};
+        const forecastLine = (fc.max_hours != null && fc.hour_step != null)
+            ? `Forecast window F000…F${String(fc.max_hours).padStart(3, '0')} step ${fc.hour_step}h`
+            : '';
+
+        const serviceCards = (status.services || []).map(svc => `
+            <div class="status-service">
+              <span class="status-service-label">${svc.label || svc.id}</span>
+              <span class="status-badge status-badge--${svc.state || 'planned'}">${serviceStateLabel(svc.state)}</span>
+            </div>`).join('');
+
+        const dsEntries = Object.entries(status.datasets || {});
+        const dsRows = dsEntries.map(([ds, meta]) => {
+            const cycle = meta.cycle || cfg?.cycles?.[ds] || null;
+            const fresh = freshnessForDataset(ds, cycle, meta.state);
+            const init = parseCycleUtc(cycle);
+            const lead = (meta.hours_first && meta.hours_last)
+                ? `${meta.hours_first}–${meta.hours_last}`
+                : '—';
+            const coverage = meta.state === 'unavailable'
+                ? 'No maps'
+                : `${meta.regions || 0} region${meta.regions === 1 ? '' : 's'}, ${meta.hour_count || 0} frame${meta.hour_count === 1 ? '' : 's'} (${lead})`;
+            const products = (meta.products || []).length
+                ? meta.products.join(', ')
+                : '—';
+            return `<tr>
+                <td>
+                  <div class="status-ds-name">${meta.label || ds}</div>
+                  <div class="status-ds-source">${meta.source || ds}</div>
+                </td>
+                <td><code>${cycle || '—'}</code></td>
+                <td>${formatUtcStamp(init)}</td>
+                <td>${formatAgeHours(fresh.ageH)}</td>
+                <td><span class="status-badge status-badge--${fresh.key}">${fresh.label}</span></td>
+                <td>
+                  <div>${coverage}</div>
+                  <div class="status-ds-products">${products}</div>
+                </td>
+              </tr>`;
+        }).join('');
+
+        statusPanel.innerHTML = `
+            <div class="status-meta-row">
+              <p class="status-meta"><strong>Last pipeline update:</strong> ${generated}</p>
+              ${forecastLine ? `<p class="status-meta">${forecastLine}</p>` : ''}
+            </div>
+            <h3 class="status-heading">Services</h3>
+            <div class="status-services">${serviceCards}</div>
+            <h3 class="status-heading">Data sources</h3>
+            <div class="status-table-wrap">
+              <table class="status-table">
+                <thead>
+                  <tr>
+                    <th>Source</th>
+                    <th>Cycle</th>
+                    <th>Initial time</th>
+                    <th>Age</th>
+                    <th>Freshness</th>
+                    <th>Coverage</th>
+                  </tr>
+                </thead>
+                <tbody>${dsRows || '<tr><td colspan="6">No datasets reported.</td></tr>'}</tbody>
+              </table>
+            </div>
+            <p class="status-footnote">GFS cycles are typically fresh within ~12h of initial time (pipeline runs ~5h after each synoptic cycle). HYCOM surface fields often lag ~1 day — up to ~48h is expected.</p>`;
+    }
+
+
+    /* ------------------------------------------------------------
      * Load CONFIG.json
      * ------------------------------------------------------------ */
     fetch("assets/config/config.json")
@@ -865,6 +1368,8 @@
             timeSelect.onchange = updateMap;
 
             loadForecastTypes();
+            renderStatusPanel(CONFIG);
+            initSiteForecast(CONFIG);
         })
         .catch(err => {
             console.error("Failed to load config.json:", err);
@@ -876,6 +1381,8 @@
             selectDefaultRegion();
             regionSelect.onchange = loadForecastTypes;
             loadForecastTypes();
+            renderStatusPanel(CONFIG);
+            initSiteForecast(CONFIG);
         });
 
     document.querySelectorAll('.service-card').forEach(card => {

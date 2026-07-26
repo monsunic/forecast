@@ -16,6 +16,9 @@
 # Notable env vars (blank is treated as unset):
 #   CYCLE, HYCOM_CYCLE      model cycles, YYYYMMDDHH   (default: auto-pick latest)
 #   MAX_HOURS, HOUR_STEP    lead-time window           (default: plotter/config/config.yaml)
+#                           HOUR_STEP is the base/finest stride; per-dataset
+#                           overrides (forecast.dataset_hour_step, e.g. HYCOM 6h)
+#                           apply only when HOUR_STEP is not set explicitly.
 #   REGION                  region id or "all"         (default: all)
 #   DATASETS                space/comma separated      (default: gfswave gfsatmos hycom)
 #   CONTINUE_ON_DATASET_ERROR=1     keep going after a dataset fails
@@ -64,6 +67,18 @@ print(get_hour_step())
 "
 }
 
+# Per-dataset stride: honours forecast.dataset_hour_step overrides (e.g. HYCOM
+# at 6-hourly) and falls back to the base step. Overrides are coarser than the
+# base, so the base step passed to generate_config stays a valid superset.
+dataset_hour_step() {
+    python3 -c "
+import sys
+sys.path.insert(0, '${ROOT}')
+from plotter.core.config_loader import get_dataset_hour_step
+print(get_dataset_hour_step('$1', $2))
+"
+}
+
 # Strip surrounding whitespace so an empty workflow_dispatch input (which arrives
 # as "" or a stray newline) falls back to the auto-detected value.
 trim() {
@@ -89,6 +104,11 @@ REGION="$(trim "${REGION:-}")"
 DATASETS="$(trim "${DATASETS:-}")"
 CONTINUE_ON_DATASET_ERROR="$(trim "${CONTINUE_ON_DATASET_ERROR:-0}")"
 DATASET_TIMEOUT_MINUTES="$(trim "${DATASET_TIMEOUT_MINUTES:-100}")"
+
+# An explicit HOUR_STEP (e.g. a manual dispatch for a dense run) overrides the
+# per-dataset config defaults; a blank one lets each dataset use its own stride.
+HOUR_STEP_EXPLICIT=0
+[[ -n "$HOUR_STEP" ]] && HOUR_STEP_EXPLICIT=1
 
 GFS_CYCLE="${CYCLE:-$(pick_gfs_cycle)}"
 HYCOM_CYCLE="${HYCOM_CYCLE:-$(pick_hycom_cycle)}"
@@ -121,12 +141,18 @@ for ds in $DATASETS; do
         continue
     fi
 
-    echo "[INFO] Plotting dataset: $ds (cycle $ds_cycle)"
+    if [[ "$HOUR_STEP_EXPLICIT" == "1" ]]; then
+        ds_step="$HOUR_STEP"
+    else
+        ds_step="$(dataset_hour_step "$ds" "$HOUR_STEP")"
+    fi
+
+    echo "[INFO] Plotting dataset: $ds (cycle $ds_cycle, step ${ds_step}h)"
     # A hung upstream download must not eat the whole job's 6 h budget, which is
     # what silently killed the first 3-hourly production run.
     timeout --signal=TERM --kill-after=60s "${DATASET_TIMEOUT_MINUTES}m" \
         python3 src/plot.py --dataset "$ds" --cycle "$ds_cycle" --region "$REGION" \
-        --max-hours "$MAX_HOURS" --hour-step "$HOUR_STEP"
+        --max-hours "$MAX_HOURS" --hour-step "$ds_step"
     status=$?
 
     if [[ $status -eq 0 ]]; then
@@ -148,6 +174,30 @@ for ds in $DATASETS; do
         break
     fi
 done
+
+# Site forecast reuses the same GRIB/NCSS caches as map plots when available.
+SITE_DATASETS=""
+for ds in gfswave gfsatmos hycom; do
+    for ok in "${SUCCEEDED[@]+"${SUCCEEDED[@]}"}"; do
+        if [[ "$ok" == "$ds" ]]; then
+            SITE_DATASETS="${SITE_DATASETS:+$SITE_DATASETS,}$ds"
+            break
+        fi
+    done
+done
+
+if [[ -n "$SITE_DATASETS" ]]; then
+    echo "[INFO] Extracting site forecasts ($SITE_DATASETS)"
+    SITE_ARGS=(--gfs-cycle "$GFS_CYCLE" --max-hours "$MAX_HOURS" --hour-step "$HOUR_STEP" --datasets "$SITE_DATASETS")
+    if [[ "$SITE_DATASETS" == *"hycom"* && -n "${HYCOM_CYCLE:-}" ]]; then
+        SITE_ARGS+=(--hycom-cycle "$HYCOM_CYCLE")
+    fi
+    if ! python3 src/site_forecast.py "${SITE_ARGS[@]}"; then
+        echo "[WARN] Site forecast extraction failed; continuing with maps-only publish" >&2
+    fi
+else
+    echo "[WARN] Skipping site forecast — no successful datasets"
+fi
 
 # Always rebuild the frontend config from the maps that exist, so a partial run
 # still ships a coherent site. Only successful datasets get a fresh cycle stamp.
