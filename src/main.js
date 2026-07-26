@@ -48,7 +48,7 @@
         });
     });
 
-    setActive(localStorage.getItem('nw_section') || 'map');
+    setActive(localStorage.getItem('nw_section') || 'home');
 
 
     /* ------------------------------------------------------------
@@ -1034,6 +1034,48 @@
         return `${Math.abs(lat).toFixed(4)}°${ns}, ${Math.abs(lon).toFixed(4)}°${ew}`;
     }
 
+    let leafletApi = null;
+
+    function destroySiteMap() {
+        if (siteMapInstance) {
+            try { siteMapInstance.remove(); } catch (_) { /* ignore */ }
+            siteMapInstance = null;
+        }
+        siteMapMarkers.clear();
+        siteMapPromise = null;
+        if (siteMapEl) {
+            siteMapEl.innerHTML = '<p class="site-map-loading">Loading port map…</p>';
+        }
+    }
+
+    function siteDomainCenter() {
+        return [
+            (SITE_MAP_BOUNDS[0][0] + SITE_MAP_BOUNDS[1][0]) / 2,
+            (SITE_MAP_BOUNDS[0][1] + SITE_MAP_BOUNDS[1][1]) / 2,
+        ];
+    }
+
+    function fitSiteMapToDomain() {
+        if (!siteMapInstance) return;
+        const map = siteMapInstance;
+        map.invalidateSize({ animate: false });
+        const size = map.getSize();
+        if (!size || size.x < 40 || size.y < 40) {
+            setTimeout(fitSiteMapToDomain, 80);
+            return;
+        }
+        // Explicit overview first — avoids a sticky bad zoom from fitting
+        // while the Site section was still layout-sizing.
+        map.setView(siteDomainCenter(), 4, { animate: false });
+        if (leafletApi) {
+            map.fitBounds(leafletApi.latLngBounds(SITE_MAP_BOUNDS), {
+                padding: [24, 24],
+                maxZoom: 5,
+                animate: false,
+            });
+        }
+    }
+
     function showSiteOverview() {
         destroySiteCharts();
         if (siteAbort) {
@@ -1056,7 +1098,10 @@
         }
         highlightSiteMarker(null);
         localStorage.removeItem('nw_site');
-        ensureInteractiveSiteMap();
+        // Recreate so Port map always returns to the full domain, even if the
+        // user had panned/zoomed or a prior fit happened on a zero-size pane.
+        destroySiteMap();
+        ensureInteractiveSiteMap({ resetView: true });
     }
 
     function showSiteChartsMode() {
@@ -1097,10 +1142,20 @@
         });
     }
 
-    function ensureInteractiveSiteMap() {
-        if (!siteMapEl || siteOverview?.hidden) return;
+    function isSiteSectionActive() {
+        return document.getElementById('site')?.classList.contains('active');
+    }
+
+    function ensureInteractiveSiteMap(opts = {}) {
+        const resetView = !!opts.resetView;
+        if (!siteMapEl || siteOverview?.hidden || !isSiteSectionActive()) return;
+        if (siteMapInstance && resetView) {
+            destroySiteMap();
+        }
         if (siteMapInstance) {
-            requestAnimationFrame(() => siteMapInstance.invalidateSize());
+            requestAnimationFrame(() => {
+                siteMapInstance.invalidateSize({ animate: false });
+            });
             return;
         }
         if (siteMapPromise) return;
@@ -1112,28 +1167,24 @@
                 return r.json();
             }),
         ]).then(([L, countries]) => {
+            // Section may have changed while Leaflet/GeoJSON were loading.
+            if (!isSiteSectionActive() || siteOverview?.hidden) {
+                siteMapPromise = null;
+                return;
+            }
+            leafletApi = L;
             siteMapEl.innerHTML = '';
             const map = L.map(siteMapEl, {
                 zoomControl: true,
                 attributionControl: false,
-                minZoom: 4,
+                minZoom: 3,
                 maxZoom: 12,
                 zoomSnap: 0.25,
                 wheelDebounceTime: 60,
             });
             siteMapInstance = map;
             map.setMaxBounds(L.latLngBounds(SITE_MAP_BOUNDS).pad(0.35));
-
-            const markerSites = siteCatalog.filter(
-                s => s.lat != null && s.lon != null
-            );
-            const markerBounds = markerSites.map(s => [s.lat, s.lon]);
-            // Leaflet path layers need an initialized view/zoom first.
-            if (markerBounds.length) {
-                map.fitBounds(markerBounds, { padding: [32, 32], maxZoom: 7 });
-            } else {
-                map.fitBounds(SITE_MAP_BOUNDS, { padding: [16, 16] });
-            }
+            map.setView(siteDomainCenter(), 4, { animate: false });
 
             L.geoJSON(countries, {
                 style: {
@@ -1145,6 +1196,9 @@
                 interactive: false,
             }).addTo(map);
 
+            const markerSites = siteCatalog.filter(
+                s => s.lat != null && s.lon != null
+            );
             markerSites.forEach(site => {
                     const marker = L.circleMarker([site.lat, site.lon], {
                         radius: 7,
@@ -1165,7 +1219,7 @@
                     siteMapMarkers.set(site.id, marker);
                 });
 
-            requestAnimationFrame(() => map.invalidateSize());
+            requestAnimationFrame(() => fitSiteMapToDomain());
         }).catch(err => {
             console.error('Interactive site map failed:', err);
             siteMapEl.innerHTML =
@@ -1583,7 +1637,9 @@
     function ensureSiteForecastReady() {
         if (!siteUiReady) return;
         if (siteOverview && !siteOverview.hidden) {
-            ensureInteractiveSiteMap();
+            // Fit the full domain after the Site section becomes visible —
+            // creating/fitting while display:none yields a broken zoom.
+            ensureInteractiveSiteMap({ resetView: true });
         }
     }
 
