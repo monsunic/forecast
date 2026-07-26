@@ -34,24 +34,39 @@ regions:
 # SITE FORECAST LOCATIONS (fixed ports)
 # ========================================================
 sites:
-  singapore:
-    name: Port of Singapore
-    lat: 1.2788
-    lon: 103.7566
-  port_klang:
-    name: Port Klang
-    lat: 2.9996
-    lon: 101.3929
-  tanjung_pelepas:
-    name: Pelabuhan Tanjung Pelepas
-    lat: 1.3497
-    lon: 103.5509
+  # Ordered alphabetically by display name. Coordinates are the reference port
+  # locations from Google Maps / UN-LOCODE (nearest wet grid cell is sampled at
+  # extraction time, so land-side port centroids are fine here).
+  haiphong:
+    name: Port of Hai Phong
+    lat: 20.8500
+    lon: 106.6833
+  ho_chi_minh:
+    name: Saigon Port (Ho Chi Minh)
+    lat: 10.7683
+    lon: 106.7075
   laem_chabang:
     name: Laem Chabang Port
     lat: 13.0833
     lon: 100.8833
+  manila:
+    name: Port of Manila
+    lat: 14.5967
+    lon: 120.9544
+  port_klang:
+    name: Port Klang
+    lat: 2.9996
+    lon: 101.3929
+  singapore:
+    name: Port of Singapore
+    lat: 1.2644
+    lon: 103.8200
+  tanjung_perak:
+    name: Tanjung Perak (Surabaya)
+    lat: -7.1983
+    lon: 112.7228
   tanjung_priok:
-    name: Tanjung Priok Port
+    name: Tanjung Priok (Jakarta)
     lat: -6.1040
     lon: 106.8865
 

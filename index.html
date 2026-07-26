@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nusawave Forecast</title>
   <link rel="icon" href="assets/icons/nusawave-forecast-logo.png" type="image/png" />
-  <link rel="stylesheet" href="src/style.css?v=20260726-site" />
+  <link rel="stylesheet" href="src/style.css?v=20260726-chart-parity" />
 </head>
 
 <body>
@@ -105,15 +105,19 @@
 
       <section id="site" class="section">
         <h2>Site Forecast</h2>
-        <p class="site-intro">Point forecasts for major Southeast Asian ports — wind, waves, ocean, and weather.</p>
+        <p class="site-intro">Point forecasts for major Southeast Asian ports — click a marker or choose a port.</p>
         <div class="site-controls">
           <select id="siteSelect" aria-label="Port site"></select>
+          <button type="button" id="siteOverviewBtn" class="overview-btn">Port map</button>
           <a id="siteDownloadBtn" class="site-download-btn" href="#" download hidden>Download chart</a>
         </div>
-        <p id="siteSummary" class="site-summary"></p>
-        <div id="sitePanel" class="site-panel">
-          <p class="site-placeholder">Select a port to load the forecast.</p>
+        <p id="siteSummary" class="site-summary">Click a port marker to open its forecast.</p>
+        <div id="siteOverview" class="site-overview">
+          <div id="siteMap" class="site-map" aria-label="Interactive western Southeast Asia port map">
+            <p class="site-map-loading">Loading port map…</p>
+          </div>
         </div>
+        <div id="sitePanel" class="site-panel" hidden></div>
       </section>
       <section id="route" class="section">
         <h2>Route Forecast</h2>
@@ -160,7 +164,7 @@
     </main>
   </div>
 
-  <script type="module" src="src/main.js?v=20260726-site"></script>
+  <script type="module" src="src/main.js?v=20260726-chart-parity"></script>
 </body>
 
 </html>

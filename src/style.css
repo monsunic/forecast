@@ -449,8 +449,44 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, '
     font-size: 0.9rem;
     line-height: 1.4;
 }
+.site-overview {
+    max-width: 960px;
+}
+.site-overview[hidden] {
+    display: none !important;
+}
+.site-map {
+    position: relative;
+    width: 100%;
+    height: clamp(320px, 62dvh, 680px);
+    border: 1px solid #e6eef9;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #a9c8e8;
+}
+.site-map-loading,
+.site-map-error {
+    margin: 0;
+    padding: 18px;
+    color: #4a5d73;
+    line-height: 1.4;
+}
+.site-map.leaflet-container {
+    font-family: inherit;
+    background: #a9c8e8;
+}
+.site-map .leaflet-tooltip {
+    border: 0;
+    border-radius: 5px;
+    color: var(--text);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(11, 35, 64, 0.18);
+}
 .site-panel {
     max-width: 960px;
+}
+.site-panel[hidden] {
+    display: none !important;
 }
 .site-placeholder {
     color: #4a5d73;
@@ -470,6 +506,12 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, '
     border-radius: 8px;
     background: #fff;
     padding: 8px 10px 4px;
+}
+.site-dir-note {
+    margin: 4px 0 0;
+    font-size: 0.82rem;
+    color: #5a6d82;
+    line-height: 1.35;
 }
 
 /* Responsive */
@@ -501,9 +543,13 @@ body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, '
 .site-controls select{min-width:100%;max-width:100%;width:100%}
 .site-download-btn{text-align:center}
 .site-chart-wrap{height:200px}
+.site-map{height:min(58dvh,520px);min-height:300px}
 .map-container {
     width: fit-content;
     max-width: 100%;
 }
+}
+@media (max-height:600px) and (orientation:landscape){
+.site-map{height:min(68dvh,380px);min-height:250px}
 }
 select::-ms-expand{display:none}

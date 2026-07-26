@@ -18,7 +18,10 @@ def test_build_config_merges_wave_and_atmosphere(tmp_path, monkeypatch):
     import scripts.generate_config as gc
 
     maps = tmp_path / "maps"
+    sites = tmp_path / "sites"
+    sites.mkdir()
     monkeypatch.setattr(gc, "MAPS_ROOT", maps)
+    monkeypatch.setattr(gc, "SITES_ROOT", sites)
 
     _write_maps(
         maps,

@@ -114,13 +114,103 @@ def _round_or_none(v, ndigits=2):
         return None
 
 
+def _format_axis_label(iso: str | None, fallback: str) -> str:
+    """Compact UTC tick, e.g. ``25 Jul 18Z``."""
+    if not iso:
+        return fallback
+    months = (
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    )
+    try:
+        t = pd.Timestamp(iso)
+        if t.tzinfo is None:
+            t = t.tz_localize("UTC")
+        else:
+            t = t.tz_convert("UTC")
+        return f"{t.day} {months[t.month - 1]} {t.hour:02d}Z"
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _nan_arr(values):
+    return [np.nan if v is None else float(v) for v in values]
+
+
+def _draw_dir_arrows(ax, x, y, dirs, *, color: str, convention: str = "from") -> None:
+    """Annotate magnitude series with short TO/propagation arrows."""
+    if not any(v is not None for v in y) or not any(d is not None for d in dirs):
+        return
+    n = len(x)
+    step = max(1, n // 12)
+    ymin, ymax = ax.get_ylim()
+    span = (ymax - ymin) or 1.0
+    arrow_dy = 0.07 * span
+    for i in range(0, n, step):
+        if y[i] is None or dirs[i] is None:
+            continue
+        try:
+            deg = float(dirs[i])
+            yi = float(y[i])
+        except (TypeError, ValueError):
+            continue
+        if not np.isfinite(deg) or not np.isfinite(yi):
+            continue
+        to_deg = deg + 180.0 if convention == "from" else deg
+        rad = np.radians(to_deg)
+        dx = 0.42 * np.sin(rad)
+        dy = arrow_dy * np.cos(rad)
+        ax.annotate(
+            "",
+            xy=(x[i] + dx, yi + dy),
+            xytext=(x[i] - dx * 0.35, yi - dy * 0.35),
+            arrowprops=dict(arrowstyle="->", color=color, lw=1.3, mutation_scale=12),
+            annotation_clip=True,
+        )
+
+
+def _style_axes(ax, ax_right=None, ax_right2=None):
+    ax.grid(True, alpha=0.25)
+    ax.tick_params(axis="both", labelsize=8)
+    if ax_right is not None:
+        ax_right.tick_params(axis="y", labelsize=8)
+    if ax_right2 is not None:
+        ax_right2.tick_params(axis="y", labelsize=8)
+
+
+def _merge_legends(*axes_list):
+    handles, labels = [], []
+    for ax in axes_list:
+        if ax is None:
+            continue
+        h, lab = ax.get_legend_handles_labels()
+        handles.extend(h)
+        labels.extend(lab)
+    if handles:
+        axes_list[0].legend(handles, labels, loc="upper right", fontsize=8, framealpha=0.85)
+
+
 def render_site_charts(doc: dict, outfile: Path) -> None:
-    """Write a multi-panel WebP chart pack for download."""
+    """Write a multi-panel WebP chart pack matching the interactive Chart.js layout."""
     hours = doc.get("hours") or []
+    valid_times = doc.get("valid_times") or []
     series = doc.get("series") or {}
     site = doc.get("site") or {}
-    x = list(range(len(hours)))
-    labels = hours
+    n = len(hours)
+    x = list(range(n))
+    labels = [
+        _format_axis_label(valid_times[i] if i < len(valid_times) else None, hours[i])
+        for i in range(n)
+    ]
+
+    def _aligned(values):
+        vals = list(values or [])
+        if len(vals) < n:
+            vals = vals + [None] * (n - len(vals))
+        return vals[:n]
+
+    def _entry(key):
+        return series.get(key) or {}
 
     fig, axes = plt.subplots(3, 1, figsize=(10.5, 9.5), sharex=True, dpi=110)
     fig.suptitle(
@@ -130,83 +220,114 @@ def render_site_charts(doc: dict, outfile: Path) -> None:
         y=0.98,
     )
 
-    # --- Waves & wind ---
+    # --- Waves & wind: wind (left, kt) | SWH + swell (right, m) ---
     ax = axes[0]
-    wind = (series.get("wind_speed") or {}).get("values") or []
-    swh = (series.get("swh") or {}).get("values") or []
-    swell = (series.get("swell") or {}).get("values") or []
+    ax_r = ax.twinx()
+    wind = _aligned(_entry("wind_speed").get("values"))
+    wind_dir = _aligned(_entry("wind_speed").get("dir_deg"))
+    swh = _aligned(_entry("swh").get("values"))
+    swh_dir = _aligned(_entry("swh").get("dir_deg"))
+    swell = _aligned(_entry("swell").get("values"))
+    swell_dir = _aligned(_entry("swell").get("dir_deg"))
+    plotted = False
     if any(v is not None for v in wind):
-        ax.plot(x, wind, color="#0B74DE", linewidth=1.6, label="Wind (kt)")
+        ax.plot(x, _nan_arr(wind), color="#0B74DE", linewidth=1.8, label="Wind (kt)")
+        plotted = True
     if any(v is not None for v in swh):
-        ax.plot(x, swh, color="#0B2340", linewidth=1.6, label="SWH (m)")
+        ax_r.plot(x, _nan_arr(swh), color="#0B2340", linewidth=1.8, label="SWH (m)")
+        plotted = True
     if any(v is not None for v in swell):
-        ax.plot(x, swell, color="#5B8DEF", linewidth=1.4, linestyle="--", label="Swell (m)")
-    ax.set_ylabel("Waves / wind", fontsize=9)
-    ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
-    ax.grid(True, alpha=0.25)
+        ax_r.plot(
+            x, _nan_arr(swell), color="#5B8DEF", linewidth=1.8,
+            linestyle=(0, (5, 4)), label="Swell (m)",
+        )
+        plotted = True
+    if plotted:
+        _draw_dir_arrows(ax, x, wind, wind_dir, color="#0B74DE", convention="from")
+        _draw_dir_arrows(ax_r, x, swh, swh_dir, color="#0B2340", convention="from")
+        _draw_dir_arrows(ax_r, x, swell, swell_dir, color="#5B8DEF", convention="from")
+        _merge_legends(ax, ax_r)
+    ax.set_ylabel("kt", fontsize=9)
+    ax_r.set_ylabel("m", fontsize=9)
     ax.set_title("Waves & wind", fontsize=10, loc="left", pad=4)
+    _style_axes(ax, ax_r)
 
-    # --- Ocean ---
+    # --- Ocean: SST (left) | current (right) ---
     ax = axes[1]
-    sst = (series.get("sst") or {}).get("values") or []
-    current = (series.get("current") or {}).get("values") or []
+    ax_r = ax.twinx()
+    sst = _aligned(_entry("sst").get("values"))
+    current = _aligned(_entry("current").get("values"))
+    current_dir = _aligned(_entry("current").get("dir_deg"))
+    plotted = False
     if any(v is not None for v in sst):
-        ax.plot(x, sst, color="#C45C26", linewidth=1.6, label="SST (°C)")
+        ax.plot(x, _nan_arr(sst), color="#C45C26", linewidth=1.8, label="SST (°C)")
+        plotted = True
     if any(v is not None for v in current):
-        ax2 = ax.twinx()
-        ax2.plot(x, current, color="#1F7A5C", linewidth=1.5, label="Current (cm/s)")
-        ax2.set_ylabel("Current (cm/s)", fontsize=9, color="#1F7A5C")
-        ax2.tick_params(axis="y", labelcolor="#1F7A5C", labelsize=8)
-        lines1, labels1 = ax.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=8, framealpha=0.85)
-    else:
-        ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
-    ax.set_ylabel("SST (°C)", fontsize=9)
-    ax.grid(True, alpha=0.25)
+        ax_r.plot(x, _nan_arr(current), color="#1F7A5C", linewidth=1.8, label="Current (cm/s)")
+        _draw_dir_arrows(ax_r, x, current, current_dir, color="#1F7A5C", convention="to")
+        plotted = True
+    if plotted:
+        _merge_legends(ax, ax_r)
+    ax.set_ylabel("°C", fontsize=9)
+    ax_r.set_ylabel("cm/s", fontsize=9)
     ax.set_title("Ocean", fontsize=10, loc="left", pad=4)
+    _style_axes(ax, ax_r)
 
-    # --- Weather ---
+    # --- Weather: rain (left) | temp (right) | RH (far right) ---
     ax = axes[2]
-    rain = (series.get("rain") or {}).get("values") or []
-    temp = (series.get("temp") or {}).get("values") or []
-    rh = (series.get("rh") or {}).get("values") or []
+    ax_r = ax.twinx()
+    ax_r2 = ax.twinx()
+    ax_r2.spines["right"].set_position(("axes", 1.12))
+    rain = _aligned(_entry("rain").get("values"))
+    temp = _aligned(_entry("temp").get("values"))
+    rh = _aligned(_entry("rh").get("values"))
+    plotted = False
     if any(v is not None for v in rain):
-        ax.bar(x, [0 if v is None else v for v in rain], color="#6BA3D6", alpha=0.55, width=0.7, label="Rain (mm/hr)")
+        ax.bar(
+            x, [0.0 if v is None else float(v) for v in rain],
+            color="#6BA3D6", alpha=0.6, width=0.7, label="Rain (mm/hr)",
+        )
+        plotted = True
     if any(v is not None for v in temp):
-        ax.plot(x, temp, color="#C0392B", linewidth=1.5, label="Temp (°C)")
+        ax_r.plot(x, _nan_arr(temp), color="#C0392B", linewidth=1.8, label="Temp (°C)")
+        plotted = True
     if any(v is not None for v in rh):
-        ax_rh = ax.twinx()
-        ax_rh.plot(x, rh, color="#7D3C98", linewidth=1.3, linestyle=":", label="RH (%)")
-        ax_rh.set_ylabel("RH (%)", fontsize=9, color="#7D3C98")
-        ax_rh.tick_params(axis="y", labelcolor="#7D3C98", labelsize=8)
-        lines1, labels1 = ax.get_legend_handles_labels()
-        lines2, labels2 = ax_rh.get_legend_handles_labels()
-        ax.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=8, framealpha=0.85)
-    else:
-        ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
-    ax.set_ylabel("Rain / temp", fontsize=9)
-    ax.grid(True, alpha=0.25)
+        ax_r2.plot(
+            x, _nan_arr(rh), color="#7D3C98", linewidth=1.5,
+            linestyle=(0, (2, 3)), label="RH (%)",
+        )
+        plotted = True
+    if plotted:
+        _merge_legends(ax, ax_r, ax_r2)
+    ax.set_ylabel("mm/hr", fontsize=9)
+    ax_r.set_ylabel("°C", fontsize=9, color="#C0392B")
+    ax_r.tick_params(axis="y", labelcolor="#C0392B")
+    ax_r2.set_ylabel("%", fontsize=9, color="#7D3C98")
+    ax_r2.tick_params(axis="y", labelcolor="#7D3C98")
     ax.set_title("Weather", fontsize=10, loc="left", pad=4)
+    _style_axes(ax, ax_r, ax_r2)
 
-    step = max(1, len(labels) // 12)
-    ax.set_xticks(x[::step])
-    ax.set_xticklabels(labels[::step], rotation=45, ha="right", fontsize=8)
-    ax.set_xlabel("Forecast lead", fontsize=9)
+    step = max(1, len(labels) // 12) if labels else 1
+    axes[2].set_xticks(x[::step] if x else [])
+    axes[2].set_xticklabels(labels[::step] if labels else [], rotation=45, ha="right", fontsize=8)
+    axes[2].set_xlabel("Valid time (UTC)", fontsize=9)
 
     cycles = doc.get("cycles") or {}
     cycle_bits = ", ".join(f"{k}={v}" for k, v in cycles.items())
     fig.text(
         0.01,
         0.005,
-        f"Nusawave Forecast  |  {cycle_bits}  |  {doc.get('generated_at', '')}",
+        (
+            f"Nusawave Forecast  |  {cycle_bits}  |  {doc.get('generated_at', '')}  |  "
+            "Arrows = wind/wave propagation & current flow"
+        ),
         fontsize=7,
         fontfamily="monospace",
         color="#4a5d73",
     )
 
     outfile.parent.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout(rect=[0, 0.03, 1, 0.96])
+    fig.tight_layout(rect=[0, 0.03, 0.96, 0.96])
     fig.savefig(outfile, format="webp", dpi=110, bbox_inches="tight", facecolor="white")
     plt.close(fig)
 

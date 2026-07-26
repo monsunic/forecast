@@ -31,6 +31,21 @@ def test_sample_point_descending_lat():
     assert float(pt.values) == 30.0
 
 
+def test_sample_valid_point_avoids_land_mask():
+    from plotter.core.site_extract import sample_valid_point
+
+    lon = np.array([103.5, 103.75, 104.0])
+    lat = np.array([1.0, 1.25, 1.5])
+    data = np.full((3, 3), np.nan)
+    data[1, 2] = 1.4  # nearest wet cell east of the masked port cell
+    da = xr.DataArray(data, coords={"lat": lat, "lon": lon}, dims=("lat", "lon"))
+
+    pt = sample_valid_point(da, lat=1.26, lon=103.76)
+    assert float(pt.values) == 1.4
+    assert float(pt.lat) == 1.25
+    assert float(pt.lon) == 104.0
+
+
 def test_uv_speed_dir_wind_and_current():
     from plotter.core.site_extract import _uv_speed_dir, WIND_KT_SCALE, CURRENT_CMS_SCALE
 
@@ -45,31 +60,17 @@ def test_uv_speed_dir_wind_and_current():
     assert abs(direction - 90.0) < 1e-6
 
 
-def test_append_hour_to_series():
+def test_append_hour_to_series_pads_missing_keys():
     from plotter.core.site_extract import append_hour_to_series, empty_series_shell
 
     series = empty_series_shell()
-    append_hour_to_series(
-        series,
-        {
-            "wind_speed": 12.5,
-            "wind_dir": 90.0,
-            "swh": 1.2,
-            "swh_dir": 180.0,
-            "swell": 0.8,
-            "swell_dir": 200.0,
-            "sst": 29.1,
-            "current": 35.0,
-            "current_dir": 45.0,
-            "rain": 0.1,
-            "temp": 28.0,
-            "rh": 80.0,
-        },
-    )
-    assert series["wind_speed"]["values"] == [12.5]
-    assert series["wind_speed"]["dir_deg"] == [90.0]
-    assert series["sst"]["values"] == [29.1]
-    assert "dir_deg" not in series["sst"]
+    # Wave-only hour: ocean/weather keys must still get None slots.
+    append_hour_to_series(series, {"wind_speed": 12.5, "wind_dir": 90.0, "swh": 1.2, "swh_dir": 180.0, "swell": 0.8, "swell_dir": 200.0})
+    append_hour_to_series(series, {"sst": 29.1, "current": 35.0, "current_dir": 45.0})
+    assert series["wind_speed"]["values"] == [12.5, None]
+    assert series["sst"]["values"] == [None, 29.1]
+    assert len(series["rain"]["values"]) == 2
+    assert series["rain"]["values"] == [None, None]
 
 
 def test_build_site_forecast_doc_schema():

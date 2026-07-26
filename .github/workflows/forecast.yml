@@ -64,9 +64,10 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Generate logo if missing
+      - name: Generate static assets if missing
         run: |
-          if [ ! -f assets/icons/nusawave-forecast-logo.png ] && [ ! -f assets/icons/nusawave-logo.png ]; then
+          if { [ ! -f assets/icons/nusawave-forecast-logo.png ] && [ ! -f assets/icons/nusawave-logo.png ]; } \
+             || [ ! -f assets/maps/site_countries.geojson ]; then
             python scripts/generate_static_assets.py
           fi
 

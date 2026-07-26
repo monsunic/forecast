@@ -67,6 +67,56 @@ def sample_point(da: xr.DataArray, lat: float, lon: float) -> xr.DataArray:
     return _squeeze_point(point)
 
 
+def sample_valid_point(
+    da: xr.DataArray,
+    lat: float,
+    lon: float,
+    max_radius_deg: float = 1.5,
+) -> xr.DataArray:
+    """Select the nearest non-missing grid cell around a coastal site.
+
+    Port coordinates often lie on land-masked wave/ocean cells. Try the exact
+    nearest cell first, then search outward within ``max_radius_deg``. The
+    returned DataArray preserves its time dimension.
+    """
+    point = sample_point(da, lat, lon)
+    if _scalar(point.values) is not None:
+        return point
+
+    lon_name, lat_name = _lon_lat_names(da)
+    lon_vals = np.asarray(da[lon_name].values, dtype=float)
+    lat_vals = np.asarray(da[lat_name].values, dtype=float)
+    if lon_vals.ndim != 1 or lat_vals.ndim != 1:
+        return point
+
+    target_lon = float(lon)
+    if float(np.nanmin(lon_vals)) >= 0 and target_lon < 0:
+        target_lon %= 360.0
+    elif float(np.nanmax(lon_vals)) <= 180 and target_lon > 180:
+        target_lon = ((target_lon + 180) % 360) - 180
+
+    field = da
+    for dim in list(field.dims):
+        if dim not in (lat_name, lon_name):
+            field = field.isel({dim: 0})
+    try:
+        values = np.asarray(field.transpose(lat_name, lon_name).values, dtype=float)
+    except (ValueError, TypeError):
+        return point
+
+    lon_grid, lat_grid = np.meshgrid(lon_vals, lat_vals)
+    lon_scale = math.cos(math.radians(float(lat)))
+    distance = np.hypot((lon_grid - target_lon) * lon_scale, lat_grid - float(lat))
+    valid = np.isfinite(values) & (distance <= float(max_radius_deg))
+    if not np.any(valid):
+        return point
+
+    ranked = np.where(valid, distance, np.inf)
+    iy, ix = np.unravel_index(np.argmin(ranked), ranked.shape)
+    wet = da.sel({lat_name: lat_vals[iy], lon_name: lon_vals[ix]})
+    return _squeeze_point(wet)
+
+
 def _scalar(val) -> Optional[float]:
     if val is None:
         return None
@@ -114,8 +164,13 @@ def extract_gfswave_hour(ds: xr.Dataset, lat: float, lon: float) -> dict[str, An
     grid: dict[str, Any] = {}
 
     wind = mapper["wind"]
-    u = sample_point(ds[wind["u"]], lat, lon)
-    v = sample_point(ds[wind["v"]], lat, lon)
+    u = sample_valid_point(ds[wind["u"]], lat, lon)
+    u_lat, u_lon = _sampled_coords(u)
+    v = sample_point(
+        ds[wind["v"]],
+        u_lat if u_lat is not None else lat,
+        u_lon if u_lon is not None else lon,
+    )
     speed, direction = _uv_speed_dir(u.values, v.values, WIND_KT_SCALE, meteorological=True)
     out["wind_speed"] = speed
     out["wind_dir"] = direction
@@ -123,14 +178,24 @@ def extract_gfswave_hour(ds: xr.Dataset, lat: float, lon: float) -> dict[str, An
     grid["gfswave"] = {"lat": glat, "lon": glon}
 
     swh_map = mapper["swh"]
-    swh = sample_point(ds[swh_map["mag"]], lat, lon)
-    swh_dir = sample_point(ds[swh_map["dir"]], lat, lon)
+    swh = sample_valid_point(ds[swh_map["mag"]], lat, lon)
+    swh_lat, swh_lon = _sampled_coords(swh)
+    swh_dir = sample_point(
+        ds[swh_map["dir"]],
+        swh_lat if swh_lat is not None else lat,
+        swh_lon if swh_lon is not None else lon,
+    )
     out["swh"] = _scalar(swh.values)
     out["swh_dir"] = _scalar(swh_dir.values)
 
     swell_map = mapper["swell"]
-    swell = sample_point(ds[swell_map["mag"]], lat, lon)
-    swell_dir = sample_point(ds[swell_map["dir"]], lat, lon)
+    swell = sample_valid_point(ds[swell_map["mag"]], lat, lon)
+    swell_lat, swell_lon = _sampled_coords(swell)
+    swell_dir = sample_point(
+        ds[swell_map["dir"]],
+        swell_lat if swell_lat is not None else lat,
+        swell_lon if swell_lon is not None else lon,
+    )
     out["swell"] = _scalar(swell.values)
     out["swell_dir"] = _scalar(swell_dir.values)
 
@@ -165,12 +230,17 @@ def extract_hycom_hour(ds: xr.Dataset, lat: float, lon: float) -> dict[str, Any]
     out: dict[str, Any] = {}
     grid: dict[str, Any] = {}
 
-    sst = sample_point(ds[mapper["seatemp"]["var"]], lat, lon)
+    sst = sample_valid_point(ds[mapper["seatemp"]["var"]], lat, lon)
     out["sst"] = _scalar(sst.values)
 
     cur = mapper["seacurrent"]
-    u = sample_point(ds[cur["u"]], lat, lon)
-    v = sample_point(ds[cur["v"]], lat, lon)
+    u = sample_valid_point(ds[cur["u"]], lat, lon)
+    u_lat, u_lon = _sampled_coords(u)
+    v = sample_point(
+        ds[cur["v"]],
+        u_lat if u_lat is not None else lat,
+        u_lon if u_lon is not None else lon,
+    )
     speed, direction = _uv_speed_dir(
         u.values, v.values, CURRENT_CMS_SCALE, meteorological=False
     )
@@ -202,7 +272,11 @@ def empty_series_shell() -> dict[str, dict]:
 
 
 def append_hour_to_series(series: dict, hour_vals: dict[str, Any]) -> None:
-    """Append one hour of extracted values onto accumulating series lists."""
+    """Append one hour of extracted values onto accumulating series lists.
+
+    Always appends a slot for every known series key so all series stay
+    aligned with the shared ``hours`` axis (missing datasets → ``None``).
+    """
     mapping = {
         "wind_speed": ("wind_speed", "wind_dir"),
         "swh": ("swh", "swh_dir"),
@@ -216,10 +290,9 @@ def append_hour_to_series(series: dict, hour_vals: dict[str, Any]) -> None:
     for series_key, (val_key, dir_key) in mapping.items():
         if series_key not in series:
             continue
-        if val_key in hour_vals:
-            series[series_key]["values"].append(hour_vals.get(val_key))
-            if dir_key and "dir_deg" in series[series_key]:
-                series[series_key]["dir_deg"].append(hour_vals.get(dir_key))
+        series[series_key]["values"].append(hour_vals.get(val_key))
+        if dir_key and "dir_deg" in series[series_key]:
+            series[series_key]["dir_deg"].append(hour_vals.get(dir_key))
 
 
 def build_site_forecast_doc(
