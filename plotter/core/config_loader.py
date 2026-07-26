@@ -113,6 +113,29 @@ def get_sites():
     return sites
 
 
+def get_route_corridors():
+    """Return the manual lane corridors from ``routes:`` in config.yaml.
+
+    Shape: ``{"waypoints": {id: {lat, lon}}, "edges": [[a, b], ...]}``. Edge
+    endpoints reference either a waypoint id or a ``sites:`` port id.
+    """
+    raw = load_param_config().get("routes") or {}
+    waypoints = {}
+    for wp_id, meta in (raw.get("waypoints") or {}).items():
+        if not isinstance(meta, dict) or "lat" not in meta or "lon" not in meta:
+            continue
+        waypoints[str(wp_id)] = {
+            "lat": float(meta["lat"]),
+            "lon": float(meta["lon"]),
+        }
+    edges = []
+    for pair in raw.get("edges") or []:
+        if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+            continue
+        edges.append((str(pair[0]), str(pair[1])))
+    return {"waypoints": waypoints, "edges": edges}
+
+
 def apply_product_config(config, slug, yaml_cfg=None):
     """
     Merge product plot metadata and variable styling onto a PlotConfig instance.

@@ -27,6 +27,7 @@ from plotter.core.config_loader import (
     get_hour_step,
     get_sites,
 )
+from plotter.core.dataset_hours import load_dataset_hour, valid_time_iso
 from plotter.core.site_extract import (
     EXTRACTORS,
     append_hour_to_series,
@@ -117,33 +118,6 @@ def _cycle_for(dataset: str, gfs_cycle: str, hycom_cycle: str | None) -> str | N
     if dataset == "hycom":
         return hycom_cycle
     return gfs_cycle
-
-
-def _load_hour(dataset: str, cycle: str, forecast_hour: int):
-    if dataset == "gfswave":
-        from plotter.core.grib_loader import load_gfswave_forecast
-
-        return load_gfswave_forecast(cycle, forecast_hour)
-    if dataset == "gfsatmos":
-        from plotter.core.grib_loader import load_gfsatmos_forecast
-
-        return load_gfsatmos_forecast(cycle, forecast_hour)
-    if dataset == "hycom":
-        from plotter.core.hycom_loader import load_hycom_forecast
-
-        return load_hycom_forecast(cycle, forecast_hour)
-    raise ValueError(f"Unsupported dataset for site forecast: {dataset}")
-
-
-def _valid_time_iso(ds) -> str | None:
-    if "time" not in ds.coords:
-        return None
-    t = pd.Timestamp(np.asarray(ds["time"].values).reshape(-1)[0])
-    if t.tzinfo is None:
-        t = t.tz_localize("UTC")
-    else:
-        t = t.tz_convert("UTC")
-    return t.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _round_or_none(v, ndigits=2):
@@ -496,13 +470,13 @@ def run_site_forecast(
 
         for t in forecast_hours:
             try:
-                ds = _load_hour(dataset, cycle, t)
+                ds = load_dataset_hour(dataset, cycle, t)
             except Exception as exc:
                 print(f"[WARN] {dataset} no data at t+{t:03d}h, stopping: {exc}")
                 break
 
             hour_label = f"F{t:03d}"
-            valid = _valid_time_iso(ds)
+            valid = valid_time_iso(ds)
             hours_done.append(t)
 
             for site in sites:

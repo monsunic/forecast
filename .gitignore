@@ -3,6 +3,7 @@
 __pycache__/
 .pytest_cache/
 .forecast-staging/
+.ais-cache/
 .ipynb_checkpoints/
 .env
 .env.*

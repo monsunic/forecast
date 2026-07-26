@@ -293,3 +293,43 @@ def test_site_forecast_planned_without_site_files(tmp_path, monkeypatch):
     assert site_svc["state"] == "planned"
     assert all(not s.get("has_data") for s in config["sites"])
 
+
+def test_route_forecast_operational_when_published(tmp_path, monkeypatch):
+    import scripts.generate_config as gc
+
+    maps = tmp_path / "maps"
+    routes = tmp_path / "routes"
+    routes.mkdir()
+    monkeypatch.setattr(gc, "MAPS_ROOT", maps)
+    monkeypatch.setattr(gc, "ROUTES_ROOT", routes)
+    monkeypatch.setattr(gc, "SITES_ROOT", tmp_path / "sites")
+    (tmp_path / "sites").mkdir()
+    _write_maps(maps, "gfswave", "indonesia", {"wind": ["000"]})
+
+    (routes / "field.json").write_text(
+        """
+        {
+          "generated_at": "2026-07-26T00:00:00Z",
+          "kind": "grid_field",
+          "ports": [{"id": "singapore", "name": "Singapore", "lat": 1.3, "lon": 103.8}],
+          "hours": ["F000", "F003"],
+          "cycles": {"gfswave": "2026072600"},
+          "grid": {"lat_min": 0.0, "lon_min": 100.0, "dlat": 0.5, "dlon": 0.5, "nlat": 2, "nlon": 2},
+          "sea_mask": [1, 0, 1, 1],
+          "vars": {"swh": [[1.0, null, 1.1, 1.2], [1.0, null, 1.1, 1.2]]}
+        }
+        """.strip()
+    )
+
+    config = gc.build_config(
+        datasets=["gfswave"],
+        cycles={"gfswave": "2026072600"},
+        max_hours=3,
+        hour_step=3,
+    )
+    assert config["route"]["sea_cells"] == 3
+    assert config["route"]["lane_source"] == "grid"
+    route_svc = next(s for s in config["status"]["services"] if s["id"] == "route_forecast")
+    assert route_svc["state"] == "operational"
+    assert route_svc["hours_last"] == "F003"
+

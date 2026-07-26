@@ -30,6 +30,7 @@ from plotter.core.utils import load_model_params
 CONFIG_PATH = ROOT / "assets" / "config" / "config.json"
 MAPS_ROOT = ROOT / "assets" / "maps"
 SITES_ROOT = ROOT / "assets" / "sites"
+ROUTES_ROOT = ROOT / "assets" / "routes"
 
 ALL_REGIONS = [
     "malacca_strait",
@@ -103,6 +104,7 @@ def build_status(
     hour_step: int,
     generated_at: Optional[str] = None,
     sites_with_data: int = 0,
+    route: Optional[dict] = None,
 ):
     """Build the Status-page payload written into config.json."""
     canon = set(canonical_hours(max_hours, hour_step))
@@ -158,6 +160,9 @@ def build_status(
         entry = dict(svc)
         if entry["id"] == "site_forecast":
             entry["state"] = "operational" if sites_with_data > 0 else "planned"
+        if entry["id"] == "route_forecast" and route:
+            entry["state"] = "operational"
+            entry.update(route)
         services.append(entry)
 
     return {
@@ -166,6 +171,37 @@ def build_status(
         "forecast": {"max_hours": max_hours, "hour_step": hour_step},
         "services": services,
         "datasets": dataset_status,
+    }
+
+
+def scan_route(routes_root: Optional[Path] = None):
+    """Return Route Forecast publication metadata, or None when unpublished.
+
+    The dynamic router reads a gridded metocean field (``field.json``); no lane
+    graph is published anymore.
+    """
+    path = (routes_root or ROUTES_ROOT) / "field.json"
+    if not path.is_file():
+        return None
+    try:
+        doc = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError, TypeError):
+        return None
+    hours = doc.get("hours") or []
+    grid = doc.get("grid") or {}
+    sea_cells = sum(1 for v in (doc.get("sea_mask") or []) if v)
+    if not hours or not grid or not sea_cells:
+        return None
+    return {
+        "generated_at": doc.get("generated_at"),
+        "cycles": doc.get("cycles") or {},
+        "lane_source": "grid",
+        "grid_cells": grid.get("nlat", 0) * grid.get("nlon", 0),
+        "sea_cells": sea_cells,
+        "resolution_deg": grid.get("dlat"),
+        "port_count": len(doc.get("ports") or []),
+        "hours_first": hours[0],
+        "hours_last": hours[-1],
     }
 
 
@@ -406,6 +442,10 @@ def build_config(
     config["sites"] = sites
     sites_with_data = sum(1 for s in sites if s.get("has_data"))
 
+    route = scan_route()
+    if route:
+        config["route"] = route
+
     config["status"] = build_status(
         datasets=datasets,
         scanned=scanned,
@@ -414,6 +454,7 @@ def build_config(
         max_hours=max_hours,
         hour_step=hour_step,
         sites_with_data=sites_with_data,
+        route=route,
     )
 
     return config

@@ -10,3 +10,5 @@ cfgrib
 eccodes
 pyTMD
 timescale
+# Optional: only needed for scripts/build_route_graph.py --source ais|auto
+# scikit-learn

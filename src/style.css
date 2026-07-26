@@ -685,6 +685,173 @@ body{margin:0;font-family:var(--font-ui);color:var(--text);background:var(--bg)}
     line-height: 1.35;
 }
 
+/* Route Forecast */
+.route-intro {
+    color: #4a5d73;
+    max-width: 52rem;
+    margin: 0 0 16px;
+    line-height: 1.45;
+}
+.route-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    align-items: flex-end;
+    max-width: 960px;
+    margin-bottom: 14px;
+}
+.route-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 170px;
+}
+.route-field span {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #5a6d82;
+}
+.route-field select,
+.route-field input {
+    padding: 7px 9px;
+    border: 1px solid #dfeaf7;
+    border-radius: 8px;
+    background: white;
+    color: var(--text);
+    font: inherit;
+}
+.route-plan-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.route-plan-btn:hover {
+    filter: brightness(1.06);
+}
+.route-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    max-width: 960px;
+    margin: 0 0 12px;
+    padding: 14px 16px;
+    border: 1px solid #e6eef9;
+    border-radius: 10px;
+    background: #f7fbff;
+    color: #4a5d73;
+    line-height: 1.4;
+}
+.route-stat {
+    display: flex;
+    flex-direction: column;
+}
+.route-stat strong {
+    font-family: var(--font-display);
+    font-size: 1.22rem;
+    color: var(--text);
+    line-height: 1.2;
+}
+.route-stat span {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6b7f95;
+}
+.route-warnings {
+    max-width: 960px;
+    margin: 0 0 12px;
+    padding: 12px 16px;
+    border: 1px solid #f0d2d2;
+    border-left: 4px solid #D64545;
+    border-radius: 8px;
+    background: #fdf5f5;
+}
+.route-warnings[hidden] {
+    display: none !important;
+}
+.route-warnings ul {
+    margin: 0;
+    padding-left: 18px;
+    color: #7a2f2f;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+.route-map {
+    position: relative;
+    width: 100%;
+    max-width: 960px;
+    height: clamp(320px, 56dvh, 620px);
+    border: 1px solid #e6eef9;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #a9c8e8;
+}
+.route-map-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.route-placeholder {
+    margin: 0;
+    padding: 18px;
+    color: #4a5d73;
+    line-height: 1.4;
+}
+.route-chart-wrap {
+    position: relative;
+    max-width: 960px;
+    height: 240px;
+    margin-top: 16px;
+    border: 1px solid #e6eef9;
+    border-radius: 8px;
+    background: #fff;
+    padding: 8px 10px 4px;
+}
+.route-legs {
+    max-width: 960px;
+    margin-top: 16px;
+    overflow-x: auto;
+}
+.route-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+.route-table th,
+.route-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid #e6eef9;
+    white-space: nowrap;
+}
+.route-table th {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #5a6d82;
+}
+.route-table td:first-child {
+    white-space: normal;
+}
+.route-leg--unsafe td {
+    background: #fdf5f5;
+    color: #7a2f2f;
+}
+.route-note {
+    max-width: 52rem;
+    margin: 14px 0 0;
+    font-size: 0.82rem;
+    color: #5a6d82;
+    line-height: 1.45;
+}
+
 /* Responsive */
 @media (max-width:768px){
 .mobile-header{display:flex;position:sticky;top:0;z-index:1200}
@@ -715,6 +882,12 @@ body{margin:0;font-family:var(--font-ui);color:var(--text);background:var(--bg)}
 .site-download-btn{text-align:center}
 .site-chart-wrap{height:200px}
 .site-map{height:min(58dvh,520px);min-height:300px}
+.route-controls{flex-direction:column;align-items:stretch}
+.route-field{min-width:100%}
+.route-plan-btn{width:100%}
+.route-summary{gap:12px 20px}
+.route-map{height:min(52dvh,460px);min-height:280px}
+.route-chart-wrap{height:220px}
 .home-section{min-height:auto;padding:12px 0 28px}
 .home-hero{margin:4px 0 28px}
 .home-service{

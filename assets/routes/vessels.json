@@ -1,0 +1,54 @@
+{
+  "note": "Advisory speed presets for Route Forecast, not certified ship polar curves. Effective speed = clamp(calm_speed_kt - wave_coeff*swh^2 - wind_coeff*headwind_kt + current_coeff*current_along_kt, min_speed_kt, calm_speed_kt).",
+  "default": "container_feeder",
+  "profiles": [
+    {
+      "id": "container_feeder",
+      "name": "Container feeder (1,000-3,000 TEU)",
+      "calm_speed_kt": 18.0,
+      "min_speed_kt": 6.0,
+      "max_swh_m": 6.0,
+      "max_wind_kt": 45.0,
+      "comfort_swh_m": 3.5,
+      "wave_coeff": 0.35,
+      "wind_coeff": 0.04,
+      "current_coeff": 0.9
+    },
+    {
+      "id": "bulk_tanker",
+      "name": "Bulk carrier / tanker (Panamax)",
+      "calm_speed_kt": 13.0,
+      "min_speed_kt": 5.0,
+      "max_swh_m": 6.5,
+      "max_wind_kt": 48.0,
+      "comfort_swh_m": 4.0,
+      "wave_coeff": 0.28,
+      "wind_coeff": 0.05,
+      "current_coeff": 0.95
+    },
+    {
+      "id": "general_cargo",
+      "name": "General cargo (handysize)",
+      "calm_speed_kt": 12.0,
+      "min_speed_kt": 4.5,
+      "max_swh_m": 4.5,
+      "max_wind_kt": 40.0,
+      "comfort_swh_m": 3.0,
+      "wave_coeff": 0.40,
+      "wind_coeff": 0.05,
+      "current_coeff": 1.0
+    },
+    {
+      "id": "coastal_craft",
+      "name": "Coastal craft / tug and barge",
+      "calm_speed_kt": 9.0,
+      "min_speed_kt": 3.0,
+      "max_swh_m": 2.5,
+      "max_wind_kt": 30.0,
+      "comfort_swh_m": 1.5,
+      "wave_coeff": 0.70,
+      "wind_coeff": 0.06,
+      "current_coeff": 1.0
+    }
+  ]
+}

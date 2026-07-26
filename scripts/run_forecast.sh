@@ -202,6 +202,29 @@ else
     echo "[WARN] Skipping site forecast — no successful datasets"
 fi
 
+# Route Forecast publishes a gridded metocean field (SWH/wind/current + land
+# mask); the browser runs dynamic A* over it, so no lane graph is needed. Only
+# gfswave/hycom matter here. On failure the previous field.json is kept.
+ROUTE_DATASETS=""
+for ds in gfswave hycom; do
+    if [[ ",$SITE_DATASETS," == *",$ds,"* ]]; then
+        ROUTE_DATASETS="${ROUTE_DATASETS:+$ROUTE_DATASETS,}$ds"
+    fi
+done
+
+if [[ -n "$ROUTE_DATASETS" ]]; then
+    echo "[INFO] Extracting route forecast field ($ROUTE_DATASETS)"
+    ROUTE_ARGS=(--gfs-cycle "$GFS_CYCLE" --max-hours "$MAX_HOURS" --hour-step "$HOUR_STEP" --datasets "$ROUTE_DATASETS")
+    if [[ "$ROUTE_DATASETS" == *"hycom"* && -n "${HYCOM_CYCLE:-}" ]]; then
+        ROUTE_ARGS+=(--hycom-cycle "$HYCOM_CYCLE")
+    fi
+    if ! python3 src/route_field.py "${ROUTE_ARGS[@]}"; then
+        echo "[WARN] Route field extraction failed; keeping the previous publication" >&2
+    fi
+else
+    echo "[WARN] Skipping route forecast — no successful wave/ocean datasets"
+fi
+
 # Always rebuild the frontend config from the maps that exist. Successful
 # datasets get a fresh cycle stamp; failed datasets retain the cycle associated
 # with their last-published maps.

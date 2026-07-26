@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="src/style.css?v=20260726-faqs" />
+  <link rel="stylesheet" href="src/style.css?v=20260726-route-dyn" />
 </head>
 
 <body>
@@ -73,15 +73,15 @@
             </span>
           </button>
 
-          <button type="button" class="home-service" data-target="route" data-soon="true">
+          <button type="button" class="home-service" data-target="route">
             <span class="home-service-index">03</span>
             <span class="home-service-body">
               <span class="home-service-title">Route Forecast</span>
-              <span class="home-service-copy">Voyage-aware wind and wave guidance along planned tracks.</span>
+              <span class="home-service-copy">Dynamic port-to-port A* routing over open water, timed to the forecast.</span>
             </span>
             <span class="home-service-meta">
-              <span class="home-service-state">Soon</span>
-              <span class="home-service-action" aria-hidden="true">Preview</span>
+              <span class="home-service-state home-service-state--live">Live</span>
+              <span class="home-service-action" aria-hidden="true">Open</span>
             </span>
           </button>
         </div>
@@ -137,7 +137,50 @@
       </section>
       <section id="route" class="section">
         <h2>Route Forecast</h2>
-        <p>Coming soon ...</p>
+        <p class="route-intro">Plan a port-to-port passage with time-dependent A* over a land-masked sea grid. The optimizer scores each hop with the wave, wind, and current that leg will actually meet — so departure time and optimize-for mode change the track.</p>
+
+        <div class="route-controls">
+          <label class="route-field">
+            <span>Origin</span>
+            <select id="routeOrigin"></select>
+          </label>
+          <label class="route-field">
+            <span>Destination</span>
+            <select id="routeDestination"></select>
+          </label>
+          <label class="route-field">
+            <span>Departure (UTC)</span>
+            <input type="datetime-local" id="routeDeparture" step="3600" />
+          </label>
+          <label class="route-field">
+            <span>Vessel</span>
+            <select id="routeVessel"></select>
+          </label>
+          <label class="route-field">
+            <span>Optimize for</span>
+            <select id="routeMode">
+              <option value="balanced">Balanced</option>
+              <option value="fastest">Fastest</option>
+              <option value="safest">Safest</option>
+            </select>
+          </label>
+          <button type="button" id="routePlanBtn" class="route-plan-btn">Plan route</button>
+        </div>
+
+        <div id="routeSummary" class="route-summary">Loading route data…</div>
+        <div id="routeWarnings" class="route-warnings" role="status" hidden></div>
+
+        <div id="routeMap" class="route-map" aria-label="Planned route map">
+          <p class="route-placeholder">Loading route map…</p>
+        </div>
+
+        <div class="route-chart-wrap">
+          <canvas id="routeChart" aria-label="Conditions along the planned route"></canvas>
+        </div>
+
+        <div id="routeLegs" class="route-legs"></div>
+
+        <p class="route-note">Speeds come from generic vessel presets, not your ship's polar curve, and the sea grid is a simplified navigable lattice (not ENC fairways). Treat every result as advisory guidance for planning — it is not official voyage routing, and it does not replace ECDIS, notices to mariners, or the master's judgement.</p>
       </section>
       <section id="status" class="section">
         <h2>Status</h2>
@@ -152,17 +195,17 @@
         <div class="faq-list">
           <details class="faq-item" open>
             <summary>What is Nusawave Forecast?</summary>
-            <p>A free marine weather service for Southeast Asia. It turns trusted numerical models into regional maps and port-level charts so you can check wind, waves, weather, ocean conditions, and astronomical tide in one place.</p>
+            <p>A free marine weather service for Southeast Asia. It turns trusted numerical models into regional maps, port-level charts, and port-to-port route guidance so you can check wind, waves, weather, ocean conditions, astronomical tide, and voyage timing in one place.</p>
           </details>
 
           <details class="faq-item">
-            <summary>What is the difference between Map Forecast and Site Forecast?</summary>
-            <p><strong>Map Forecast</strong> shows regional fields (wind, waves, atmosphere, ocean) you can animate through lead times. <strong>Site Forecast</strong> samples major ports and plots time series for waves &amp; wind, ocean, weather, and hourly astronomical tide.</p>
+            <summary>What is the difference between Map, Site, and Route Forecast?</summary>
+            <p><strong>Map Forecast</strong> shows regional fields (wind, waves, atmosphere, ocean) you can animate through lead times. <strong>Site Forecast</strong> samples major ports and plots time series for waves &amp; wind, ocean, weather, and hourly astronomical tide. <strong>Route Forecast</strong> plans a passage between two ports with time-dependent A* over a land-masked sea grid, timed to the wave/wind/current forecast each leg will meet.</p>
           </details>
 
           <details class="faq-item">
             <summary>Which models power the forecasts?</summary>
-            <p>Maps and port series use <strong>NOAA GFS Wave</strong>, <strong>NOAA GFS Atmosphere</strong>, and <strong>HYCOM</strong> for sea temperature and surface currents. Port tide uses astronomical harmonics (FES2022 preferred; GOT4.10 bootstrap until FES is configured).</p>
+            <p>Maps, port series, and route samples use <strong>NOAA GFS Wave</strong>, <strong>NOAA GFS Atmosphere</strong>, and <strong>HYCOM</strong> for sea temperature and surface currents. Port tide uses astronomical harmonics (FES2022 preferred; GOT4.10 bootstrap until FES is configured).</p>
           </details>
 
           <details class="faq-item">
@@ -172,12 +215,12 @@
 
           <details class="faq-item">
             <summary>How often is the data updated?</summary>
-            <p>An automated pipeline refreshes maps and site charts when new model cycles are available. GFS is treated as fresh within about <strong>18 hours</strong> of initial time; HYCOM often lags longer. Open <strong>Status</strong> for per-dataset cycle age and coverage.</p>
+            <p>An automated pipeline refreshes maps, site charts, and route samples when new model cycles are available. GFS is treated as fresh within about <strong>18 hours</strong> of initial time; HYCOM often lags longer. Open <strong>Status</strong> for per-dataset cycle age and coverage.</p>
           </details>
 
           <details class="faq-item">
             <summary>Why can ocean look older than wind or weather?</summary>
-            <p>Each dataset publishes independently. If HYCOM fails on a run, the last complete ocean maps and port ocean series are kept while GFS updates normally—so the site stays usable instead of going blank.</p>
+            <p>Each dataset publishes independently. If HYCOM fails on a run, the last complete ocean maps, port ocean series, and route current fields are kept while GFS updates normally—so the site stays usable instead of going blank.</p>
           </details>
 
           <details class="faq-item">
@@ -196,8 +239,13 @@
           </details>
 
           <details class="faq-item">
-            <summary>Is Route Forecast available?</summary>
-            <p>Not yet — it is planned. Map and Site Forecast are live today.</p>
+            <summary>How does Route Forecast choose a path?</summary>
+            <p>It runs a <strong>time-dependent A*</strong> over a land-masked sea lattice covering Southeast Asian waters. You pick origin, destination, departure time (UTC), vessel class, and mode (<em>fastest</em>, <em>safest</em>, or <em>balanced</em>). Fastest minimises passage time; safest pays a heavy penalty for rough seas and strong winds; balanced sits between. Edges that exceed the vessel’s wave/wind limits are pruned when possible; otherwise the least severe option is shown with a warning.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Is Route Forecast official voyage routing?</summary>
+            <p>No. Speeds come from generic vessel presets (not your ship’s polar curve), and the sea grid is a simplified navigable lattice (not ENC fairways). Treat every result as advisory planning guidance — it does not replace ECDIS, notices to mariners, or the master’s judgement.</p>
           </details>
 
           <details class="faq-item">
@@ -237,7 +285,8 @@
     </main>
   </div>
 
-  <script type="module" src="src/main.js?v=20260726-faqs"></script>
+  <script type="module" src="src/main.js?v=20260726-route-dyn"></script>
+  <script type="module" src="src/route.js?v=20260726-route-dyn"></script>
 </body>
 
 </html>

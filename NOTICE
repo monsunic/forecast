@@ -39,6 +39,15 @@ Astronomical tide harmonics
              FES terms when publishing FES2022-derived products.
 
 
+Historical AIS (optional lane harvest)
+  Source:  AISDataPortal/DB on Hugging Face
+  Access:  https://huggingface.co/datasets/AISDataPortal/DB
+  Notes:   Used only by the offline `scripts/build_route_graph.py --source ais`
+           builder. The committed lane graph ships from hand-digitized corridors
+           unless an AIS harvest validates full port connectivity. Not used in
+           the per-cycle forecast pipeline.
+
+
 OPEN-SOURCE DEPENDENCIES
 ------------------------
 
@@ -57,6 +66,7 @@ requirements.txt for the full list). Each is subject to its own license:
   - eccodes           — Apache-2.0
   - pyTMD             — MIT
   - timescale         — MIT
+  - scikit-learn      — BSD 3-Clause (optional; AIS lane clustering only)
 
 Install and review each package's license before redistribution or commercial
 use of a derivative work. This repository is licensed under CC BY-NC-ND 4.0;

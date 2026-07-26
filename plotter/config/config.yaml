@@ -71,6 +71,124 @@ sites:
     lon: 106.8865
 
 # ========================================================
+# ROUTE FORECAST LANE GRAPH (manual corridors)
+# ========================================================
+# Fallback lane network used when no AIS-derived graph is available. Waypoints
+# trace the common commercial corridors (Malacca/Singapore Strait, Gulf of
+# Thailand, South China Sea, Karimata/Java Sea) and must sit in navigable
+# water. Ports are referenced by their `sites:` id above.
+# Rebuild the graph with: python scripts/build_route_graph.py --source auto
+routes:
+  waypoints:
+    # --- Malacca and Singapore Strait ---
+    wp_malacca_n: {lat: 4.80, lon: 98.80}
+    wp_malacca_mid: {lat: 3.20, lon: 100.40}
+    wp_klang_app: {lat: 2.95, lon: 101.10}
+    wp_malacca_s: {lat: 1.75, lon: 102.80}
+    wp_sing_w: {lat: 1.22, lon: 103.55}
+    wp_sing_e: {lat: 1.16, lon: 104.20}
+    # --- East Malaysia coast and Gulf of Thailand ---
+    wp_tioman: {lat: 2.80, lon: 104.60}
+    wp_gulf_s: {lat: 6.50, lon: 103.20}
+    wp_gulf_c: {lat: 10.00, lon: 101.80}
+    wp_laem_app: {lat: 12.90, lon: 100.95}
+    # Eastern gulf exit into the SCS (avoids the Malay-coast / Singapore detour
+    # for Gulf of Thailand → Philippines voyages).
+    wp_gulf_e: {lat: 9.80, lon: 103.80}
+    # --- South China Sea ---
+    wp_scs_s: {lat: 2.20, lon: 105.20}
+    wp_natuna: {lat: 3.50, lon: 106.80}
+    wp_scs_c: {lat: 7.50, lon: 107.80}
+    wp_vung_tau: {lat: 10.20, lon: 107.30}
+    wp_scs_n: {lat: 14.00, lon: 109.80}
+    wp_tonkin_e: {lat: 18.50, lon: 107.60}
+    wp_haiphong_app: {lat: 20.60, lon: 107.00}
+    # Mid-SCS mesh so the router can pick weather-aware tracks toward Manila
+    # without collapsing onto a single Singapore–Natuna trunk.
+    wp_scs_sw: {lat: 8.80, lon: 105.80}
+    wp_scs_mid: {lat: 10.50, lon: 112.00}
+    wp_scs_cs: {lat: 7.00, lon: 112.50}
+    wp_scs_cn: {lat: 13.00, lon: 112.50}
+    wp_scs_ne: {lat: 12.50, lon: 115.50}
+    wp_scs_e: {lat: 13.20, lon: 118.20}
+    wp_manila_app: {lat: 14.55, lon: 120.40}
+    # --- Karimata Strait and Java Sea ---
+    # East of Bintan/Lingga: the Singapore-Jakarta lane must clear the Riau
+    # archipelago rather than cut across it.
+    wp_bintan_e: {lat: 1.05, lon: 104.90}
+    wp_riau_e: {lat: -0.20, lon: 105.30}
+    wp_karimata_n: {lat: -1.00, lon: 105.80}
+    wp_karimata_s: {lat: -3.50, lon: 107.20}
+    wp_java_w: {lat: -5.60, lon: 106.95}
+    wp_priok_app: {lat: -5.98, lon: 106.89}
+    wp_java_c: {lat: -5.80, lon: 110.50}
+    wp_perak_app: {lat: -6.90, lon: 112.72}
+
+  # Undirected lane segments; the router traverses them in both directions.
+  edges:
+    - [port_klang, wp_klang_app]
+    - [wp_klang_app, wp_malacca_mid]
+    - [wp_malacca_mid, wp_malacca_n]
+    - [wp_klang_app, wp_malacca_s]
+    - [wp_malacca_s, wp_sing_w]
+    - [wp_sing_w, singapore]
+    - [singapore, wp_sing_e]
+    - [wp_sing_w, wp_sing_e]
+    - [wp_sing_e, wp_tioman]
+    - [wp_tioman, wp_gulf_s]
+    - [wp_gulf_s, wp_gulf_c]
+    - [wp_gulf_c, wp_laem_app]
+    - [wp_laem_app, laem_chabang]
+    # Direct Gulf of Thailand → South China Sea (commercial eastbound exit)
+    - [wp_gulf_c, wp_gulf_e]
+    - [wp_gulf_e, wp_scs_sw]
+    - [wp_gulf_s, wp_scs_sw]
+    - [wp_gulf_e, wp_vung_tau]
+    - [wp_scs_sw, wp_scs_c]
+    - [wp_scs_sw, wp_vung_tau]
+    - [wp_sing_e, wp_scs_s]
+    - [wp_scs_s, wp_natuna]
+    - [wp_natuna, wp_scs_c]
+    - [wp_scs_c, wp_vung_tau]
+    - [wp_vung_tau, ho_chi_minh]
+    - [wp_scs_c, wp_scs_n]
+    - [wp_scs_n, wp_tonkin_e]
+    - [wp_tonkin_e, wp_haiphong_app]
+    - [wp_haiphong_app, haiphong]
+    # SCS mesh toward Manila (north / mid / south alternatives)
+    - [wp_scs_c, wp_scs_mid]
+    - [wp_scs_c, wp_scs_cs]
+    - [wp_vung_tau, wp_scs_mid]
+    - [wp_vung_tau, wp_scs_cn]
+    - [wp_scs_n, wp_scs_cn]
+    - [wp_scs_n, wp_scs_mid]
+    - [wp_scs_mid, wp_scs_cn]
+    - [wp_scs_mid, wp_scs_cs]
+    - [wp_scs_mid, wp_scs_ne]
+    - [wp_scs_mid, wp_scs_e]
+    - [wp_scs_cn, wp_scs_ne]
+    - [wp_scs_cn, wp_scs_e]
+    - [wp_scs_cs, wp_scs_ne]
+    - [wp_scs_cs, wp_natuna]
+    - [wp_natuna, wp_scs_ne]
+    - [wp_scs_n, wp_scs_ne]
+    - [wp_scs_ne, wp_scs_e]
+    - [wp_scs_ne, wp_manila_app]
+    - [wp_scs_e, wp_manila_app]
+    - [wp_manila_app, manila]
+    - [wp_scs_s, wp_karimata_n]
+    - [wp_sing_e, wp_bintan_e]
+    - [wp_bintan_e, wp_riau_e]
+    - [wp_riau_e, wp_karimata_n]
+    - [wp_karimata_n, wp_karimata_s]
+    - [wp_karimata_s, wp_java_w]
+    - [wp_java_w, wp_priok_app]
+    - [wp_priok_app, tanjung_priok]
+    - [wp_java_w, wp_java_c]
+    - [wp_java_c, wp_perak_app]
+    - [wp_perak_app, tanjung_perak]
+
+# ========================================================
 # FORECAST RUN SETTINGS
 # ========================================================
 forecast:

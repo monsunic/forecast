@@ -3353,8 +3353,22 @@
       ]
     }
   ],
+  "route": {
+    "generated_at": "2026-07-26T12:10:56Z",
+    "cycles": {
+      "gfswave": "2026072600",
+      "hycom": "2026072503"
+    },
+    "lane_source": "grid",
+    "grid_cells": 3315,
+    "sea_cells": 2284,
+    "resolution_deg": 0.5,
+    "port_count": 8,
+    "hours_first": "F000",
+    "hours_last": "F072"
+  },
   "status": {
-    "generated_at": "2026-07-26T10:13:37Z",
+    "generated_at": "2026-07-26T12:11:44Z",
     "forecast": {
       "max_hours": 72,
       "hour_step": 3
@@ -3373,7 +3387,19 @@
       {
         "id": "route_forecast",
         "label": "Route Forecast",
-        "state": "planned"
+        "state": "operational",
+        "generated_at": "2026-07-26T12:10:56Z",
+        "cycles": {
+          "gfswave": "2026072600",
+          "hycom": "2026072503"
+        },
+        "lane_source": "grid",
+        "grid_cells": 3315,
+        "sea_cells": 2284,
+        "resolution_deg": 0.5,
+        "port_count": 8,
+        "hours_first": "F000",
+        "hours_last": "F072"
       }
     ],
     "datasets": {
