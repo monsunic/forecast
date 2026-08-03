@@ -331,7 +331,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080123"
+          "cycle": "2026080204"
         }
       }
     },
@@ -665,7 +665,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080123"
+          "cycle": "2026080204"
         }
       }
     },
@@ -999,7 +999,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080123"
+          "cycle": "2026080204"
         }
       }
     },
@@ -1333,7 +1333,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080123"
+          "cycle": "2026080204"
         }
       }
     },
@@ -1667,7 +1667,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080123"
+          "cycle": "2026080204"
         }
       }
     },
@@ -2001,7 +2001,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080123"
+          "cycle": "2026080204"
         }
       }
     },
@@ -2335,7 +2335,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080123"
+          "cycle": "2026080204"
         }
       }
     },
@@ -2669,7 +2669,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080123"
+          "cycle": "2026080204"
         }
       }
     },
@@ -3003,7 +3003,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080123"
+          "cycle": "2026080204"
         }
       }
     }
@@ -3013,7 +3013,7 @@
   "cycles": {
     "gfswave": "2026080300",
     "gfsatmos": "2026080300",
-    "hycom": "2026080123"
+    "hycom": "2026080204"
   },
   "sites": [
     {
@@ -3023,11 +3023,11 @@
       "lon": 106.6833,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-03T06:23:14Z",
+      "generated_at": "2026-08-03T12:13:46Z",
       "cycles": {
         "gfswave": "2026080300",
         "gfsatmos": "2026080300",
-        "hycom": "2026080123",
+        "hycom": "2026080204",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3065,11 +3065,11 @@
       "lon": 106.7075,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-03T06:23:14Z",
+      "generated_at": "2026-08-03T12:13:46Z",
       "cycles": {
         "gfswave": "2026080300",
         "gfsatmos": "2026080300",
-        "hycom": "2026080123",
+        "hycom": "2026080204",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3107,11 +3107,11 @@
       "lon": 100.8833,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-03T06:23:14Z",
+      "generated_at": "2026-08-03T12:13:46Z",
       "cycles": {
         "gfswave": "2026080300",
         "gfsatmos": "2026080300",
-        "hycom": "2026080123",
+        "hycom": "2026080204",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3149,11 +3149,11 @@
       "lon": 120.9544,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-03T06:23:14Z",
+      "generated_at": "2026-08-03T12:13:46Z",
       "cycles": {
         "gfswave": "2026080300",
         "gfsatmos": "2026080300",
-        "hycom": "2026080123",
+        "hycom": "2026080204",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3191,11 +3191,11 @@
       "lon": 101.3929,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-03T06:23:14Z",
+      "generated_at": "2026-08-03T12:13:46Z",
       "cycles": {
         "gfswave": "2026080300",
         "gfsatmos": "2026080300",
-        "hycom": "2026080123",
+        "hycom": "2026080204",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3233,11 +3233,11 @@
       "lon": 103.82,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-03T06:23:14Z",
+      "generated_at": "2026-08-03T12:13:46Z",
       "cycles": {
         "gfswave": "2026080300",
         "gfsatmos": "2026080300",
-        "hycom": "2026080123",
+        "hycom": "2026080204",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3275,11 +3275,11 @@
       "lon": 112.7228,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-03T06:23:14Z",
+      "generated_at": "2026-08-03T12:13:46Z",
       "cycles": {
         "gfswave": "2026080300",
         "gfsatmos": "2026080300",
-        "hycom": "2026080123",
+        "hycom": "2026080204",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3317,11 +3317,11 @@
       "lon": 106.8865,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-03T06:23:14Z",
+      "generated_at": "2026-08-03T12:13:46Z",
       "cycles": {
         "gfswave": "2026080300",
         "gfsatmos": "2026080300",
-        "hycom": "2026080123",
+        "hycom": "2026080204",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3354,10 +3354,10 @@
     }
   ],
   "route": {
-    "generated_at": "2026-08-03T06:23:49Z",
+    "generated_at": "2026-08-03T12:14:21Z",
     "cycles": {
       "gfswave": "2026080300",
-      "hycom": "2026080123"
+      "hycom": "2026080204"
     },
     "lane_source": "grid",
     "grid_cells": 3315,
@@ -3368,7 +3368,7 @@
     "hours_last": "F072"
   },
   "status": {
-    "generated_at": "2026-08-03T06:23:49Z",
+    "generated_at": "2026-08-03T12:14:22Z",
     "forecast": {
       "max_hours": 72,
       "hour_step": 3
@@ -3388,10 +3388,10 @@
         "id": "route_forecast",
         "label": "Route Forecast",
         "state": "operational",
-        "generated_at": "2026-08-03T06:23:49Z",
+        "generated_at": "2026-08-03T12:14:21Z",
         "cycles": {
           "gfswave": "2026080300",
-          "hycom": "2026080123"
+          "hycom": "2026080204"
         },
         "lane_source": "grid",
         "grid_cells": 3315,
@@ -3437,7 +3437,7 @@
       "hycom": {
         "label": "HYCOM Ocean",
         "source": "HYCOM ESPC-D-V02",
-        "cycle": "2026080123",
+        "cycle": "2026080204",
         "products": [
           "seatemp",
           "seasalt",
