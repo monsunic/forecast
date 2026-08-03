@@ -66,7 +66,7 @@ jobs:
 
       - name: Generate static assets if missing
         run: |
-          if { [ ! -f assets/icons/nusawave-forecast-logo.png ] && [ ! -f assets/icons/nusawave-logo.png ]; } \
+          if { [ ! -f assets/icons/monsun-forecast-logo.png ] && [ ! -f assets/icons/monsun-logo.png ]; } \
              || [ ! -f assets/maps/site_countries.geojson ]; then
             python scripts/generate_static_assets.py
           fi

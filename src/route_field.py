@@ -52,7 +52,7 @@ DEFAULT_RESOLUTION = 0.5  # degrees
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="NusaWave Route Forecast field extractor")
+    parser = argparse.ArgumentParser(description="Monsun Route Forecast field extractor")
     parser.add_argument("--gfs-cycle", required=True, help="YYYYMMDDHH for GFS wave")
     parser.add_argument("--hycom-cycle", default=None, help="YYYYMMDDHH for HYCOM (optional)")
     parser.add_argument("--max-hours", type=int, default=None)

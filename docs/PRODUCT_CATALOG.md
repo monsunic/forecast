@@ -54,7 +54,7 @@ flowchart TB
 |--------|----------------|----------|
 | **Discrete shaded** | `contourf` or `pcolormesh` + `ListedColormap` + `BoundaryNorm` | All filled scalar products |
 | **Line contour** | `contour` + `clabel` | MSLP isobars (no fill) |
-| **Filled anomaly** | `contourf` + Nusawave diverging palette | SSH |
+| **Filled anomaly** | `contourf` + Monsun diverging palette | SSH |
 | **Vector overlay** | `quiver` or `barbs` | Wind/wave direction, sea current |
 
 ### Colorbar and legend
@@ -70,9 +70,9 @@ flowchart TB
 
 | UI key | Slug | Display name | Dataset | Scalar | Vector | Colormap | Levels | Unit | Deployed |
 |--------|------|--------------|---------|--------|--------|----------|--------|------|----------|
-| `swell` | `swell` | Primary Swell Height and Direction | gfswave | contourf | quiver (overlay) | `nusawave_swell` (Nusawave) | 0–7 (14 bins) | meter | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
-| `swh` | `swh` | Significant Wave Height and Direction | gfswave | contourf | quiver (overlay) | `nusawave_wave` (Nusawave) | 0–7 (14 bins) | meter | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
-| `surface_wind` | `wind` | Surface Wind Speed and Direction | gfswave | contourf | windbarb (overlay) | `nusawave_wind` (Nusawave) | 0–60 (14 bins) | knots | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
+| `swell` | `swell` | Primary Swell Height and Direction | gfswave | contourf | quiver (overlay) | `monsun_swell` (Monsun) | 0–7 (14 bins) | meter | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
+| `swh` | `swh` | Significant Wave Height and Direction | gfswave | contourf | quiver (overlay) | `monsun_wave` (Monsun) | 0–7 (14 bins) | meter | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
+| `surface_wind` | `wind` | Surface Wind Speed and Direction | gfswave | contourf | windbarb (overlay) | `monsun_wind` (Monsun) | 0–60 (14 bins) | knots | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
 
 ### Ready
 
@@ -80,31 +80,31 @@ flowchart TB
 |--------|------|--------------|---------|--------|--------|----------|--------|------|----------|
 | `—` | `mslp` | Mean Sea Level Pressure | gfsatmos | contour | none | — | 980–1050 step 2 | hPa | not deployed |
 | `mslp_wind` | `mslp_wind` | Surface Wind and MSLP | gfsatmos | none | windbarb (overlay) | — | — | knots | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
-| `rain_rh700` | `rain_rh700` | Rainfall Rate and 700 hPa Humidity | gfsatmos | contourf | none | `nusawave_rain` (Nusawave) | 0–20 (11 bins) | mm/hr | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
-| `—` | `rainrate` | Rainfall Rate | gfsatmos | contourf | none | `nusawave_rain` (Nusawave) | 0–20 (11 bins) | mm/hr | not deployed |
-| `rh` | `relhum` | Surface Relative Humidity | gfsatmos | contourf | none | `nusawave_rh` (Nusawave) | 0–100 (11 bins) | % | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
-| `current` | `seacurrent` | Surface Sea Current and Direction | hycom | contourf | quiver (overlay) | `nusawave_current` (Nusawave) | 0–400 (13 bins) | cm/s | 9 region(s), F000, F006, F012, F018, F024, F030, F036, F042, F048, F054, F060, F066, F072 |
-| `sss` | `seasalt` | Surface Sea Salinity | hycom | contourf | none | `nusawave_salinity` (Nusawave) | 30–36 (13 bins) | PSU | 9 region(s), F000, F006, F012, F018, F024, F030, F036, F042, F048, F054, F060, F066, F072 |
-| `sst` | `seatemp` | Surface Sea Temperature | hycom | contourf | none | `nusawave_sst` (Nusawave) | 16–36 (20 bins) | degC | 9 region(s), F000, F006, F012, F018, F024, F030, F036, F042, F048, F054, F060, F066, F072 |
-| `ssh` | `ssh` | Sea Surface Height | cmems | contourf | none | `nusawave_ssh` (Nusawave) | -2–2 (17 bins) | meter | not deployed |
-| `sfc_temp` | `temp` | Surface Air Temperature | gfsatmos | contourf | none | `nusawave_temp` (Nusawave) | 18–36 (19 bins) | degC | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
+| `rain_rh700` | `rain_rh700` | Rainfall Rate and 700 hPa Humidity | gfsatmos | contourf | none | `monsun_rain` (Monsun) | 0–20 (11 bins) | mm/hr | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
+| `—` | `rainrate` | Rainfall Rate | gfsatmos | contourf | none | `monsun_rain` (Monsun) | 0–20 (11 bins) | mm/hr | not deployed |
+| `rh` | `relhum` | Surface Relative Humidity | gfsatmos | contourf | none | `monsun_rh` (Monsun) | 0–100 (11 bins) | % | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
+| `current` | `seacurrent` | Surface Sea Current and Direction | hycom | contourf | quiver (overlay) | `monsun_current` (Monsun) | 0–400 (13 bins) | cm/s | 9 region(s), F000, F006, F012, F018, F024, F030, F036, F042, F048, F054, F060, F066, F072 |
+| `sss` | `seasalt` | Surface Sea Salinity | hycom | contourf | none | `monsun_salinity` (Monsun) | 30–36 (13 bins) | PSU | 9 region(s), F000, F006, F012, F018, F024, F030, F036, F042, F048, F054, F060, F066, F072 |
+| `sst` | `seatemp` | Surface Sea Temperature | hycom | contourf | none | `monsun_sst` (Monsun) | 16–36 (20 bins) | degC | 9 region(s), F000, F006, F012, F018, F024, F030, F036, F042, F048, F054, F060, F066, F072 |
+| `ssh` | `ssh` | Sea Surface Height | cmems | contourf | none | `monsun_ssh` (Monsun) | -2–2 (17 bins) | meter | not deployed |
+| `sfc_temp` | `temp` | Surface Air Temperature | gfsatmos | contourf | none | `monsun_temp` (Monsun) | 18–36 (19 bins) | degC | 9 region(s), F000, F003, F006, F009, F012, F015, F018, F021, F024, F027, F030, F033, F036, F039, F042, F045, F048, F051, F054, F057, F060, F063, F066, F069, F072 |
 
-## Nusawave colormap palettes
+## Monsun colormap palettes
 
 All shaded products use discrete palettes in [`plotter/core/colormaps.py`](../plotter/core/colormaps.py), anchored to brand colors `#0B2340` (navy) and `#0B74DE` (blue).
 
 | Palette key | Products |
 |-------------|----------|
-| `nusawave_current` | `seacurrent` |
-| `nusawave_rain` | `rainrate`, `rain_rh700` |
-| `nusawave_rh` | `relhum` |
-| `nusawave_salinity` | `seasalt` |
-| `nusawave_ssh` | `ssh` |
-| `nusawave_sst` | `seatemp` |
-| `nusawave_swell` | `swell` |
-| `nusawave_temp` | `temp` |
-| `nusawave_wave` | `swh` |
-| `nusawave_wind` | `wind` |
+| `monsun_current` | `seacurrent` |
+| `monsun_rain` | `rainrate`, `rain_rh700` |
+| `monsun_rh` | `relhum` |
+| `monsun_salinity` | `seasalt` |
+| `monsun_ssh` | `ssh` |
+| `monsun_sst` | `seatemp` |
+| `monsun_swell` | `swell` |
+| `monsun_temp` | `temp` |
+| `monsun_wave` | `swh` |
+| `monsun_wind` | `wind` |
 
 ## Windbarb support
 

@@ -1,4 +1,4 @@
-# Nusawave Forecast
+# Monsun Forecast
 
 A lightweight marine weather forecast platform for Southeast Asia. The site is a static HTML/JS frontend that displays pre-generated maps, port forecasts, and port-to-port route guidance derived from NOAA GFS (Wave + Atmosphere), HYCOM ocean model data, and astronomical tide harmonics.
 
@@ -27,12 +27,12 @@ Site chart downloads prefer a **live Chart.js canvas export** (matches the on-sc
 
 ### Prerequisites
 
-- Python 3.10+ (conda env `nusawave` recommended)
+- Python 3.10+ (conda env `monsun` recommended)
 - Cartopy system dependencies (GEOS, PROJ) — install via conda for easiest setup:
 
 ```bash
-conda create -n nusawave python=3.12 cartopy matplotlib xarray netcdf4 pyyaml pandas numpy pytest -c conda-forge
-conda activate nusawave
+conda create -n monsun python=3.12 cartopy matplotlib xarray netcdf4 pyyaml pandas numpy pytest -c conda-forge
+conda activate monsun
 pip install -r requirements.txt
 ```
 
@@ -79,7 +79,7 @@ Port tide charts use harmonic constituents stored in `plotter/data/tide_constitu
 python scripts/extract_tide_constituents.py --model GOT4.10 --fetch
 
 # FES2022 once the atlas is registered/downloaded
-NW_TIDE_DIRECTORY=/path/to/tides \
+MS_TIDE_DIRECTORY=/path/to/tides \
   python scripts/extract_tide_constituents.py --model FES2022_extrapolated
 ```
 
@@ -129,7 +129,7 @@ GitHub Actions workflow `.github/workflows/forecast.yml` runs on a cron schedule
 - **Map Forecast** — operational across GFS Wave, GFS Atmosphere, and HYCOM ocean products.
 - **Site Forecast** — operational. Interactive Leaflet port map (8 major SEA ports) with per-port charts for waves/wind, ocean, weather, and astronomical tide.
 - **Route Forecast** — operational. Fully dynamic, time-dependent grid A* over a land-masked metocean field with fastest / safest / balanced modes, vessel presets, along-route chart, and ETA. Advisory only.
-- **Product catalog** — see [docs/PRODUCT_CATALOG.md](docs/PRODUCT_CATALOG.md) for all defined products, plot types (shaded `contourf`/`pcolormesh`, line `contour`, vector `quiver`/`windbarb`), and deployment status. Each shaded product uses a **Nusawave-branded discrete palette** from [`plotter/core/colormaps.py`](plotter/core/colormaps.py) (not BMKG-style defaults).
+- **Product catalog** — see [docs/PRODUCT_CATALOG.md](docs/PRODUCT_CATALOG.md) for all defined products, plot types (shaded `contourf`/`pcolormesh`, line `contour`, vector `quiver`/`windbarb`), and deployment status. Each shaded product uses a **Monsun-branded discrete palette** from [`plotter/core/colormaps.py`](plotter/core/colormaps.py) (not BMKG-style defaults).
 
 ### Configured ports (Site / Route Forecast)
 

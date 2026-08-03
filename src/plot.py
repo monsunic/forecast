@@ -38,7 +38,7 @@ DATASET_PARAMS = {
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="NusaWave Plotting Engine")
+    parser = argparse.ArgumentParser(description="Monsun Plotting Engine")
     parser.add_argument(
         "--dataset",
         required=True,

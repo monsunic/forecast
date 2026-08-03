@@ -9,7 +9,7 @@ from .colormaps import build_cmap_norm
 
 def plot_scalar_field(ax, lon, lat, data, config, *, method=None):
     """
-    Render a shaded scalar layer using the Nusawave discrete palette.
+    Render a shaded scalar layer using the Monsun discrete palette.
     Supports contourf and pcolormesh per product plot metadata.
     """
     plot_cfg = getattr(config, "plot", {}) or {}

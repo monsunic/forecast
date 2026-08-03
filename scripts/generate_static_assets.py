@@ -19,7 +19,7 @@ MAPS_DIR = ROOT / "assets" / "maps"
 
 def generate_logo():
     ICONS_DIR.mkdir(parents=True, exist_ok=True)
-    out = ICONS_DIR / "nusawave-logo.png"
+    out = ICONS_DIR / "monsun-logo.png"
 
     fig, ax = plt.subplots(figsize=(2, 2), dpi=100)
     ax.set_xlim(0, 1)
@@ -27,7 +27,7 @@ def generate_logo():
     ax.axis("off")
     ax.add_patch(plt.Circle((0.5, 0.5), 0.42, color="#1a6fb5", zorder=1))
     ax.text(
-        0.5, 0.5, "NW",
+        0.5, 0.5, "MS",
         ha="center", va="center",
         fontsize=28, fontweight="bold", color="white",
         fontfamily="sans-serif",

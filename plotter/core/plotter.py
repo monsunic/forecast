@@ -376,7 +376,7 @@ class Plotter:
         ax.text(
             cx,
             cy,
-            f"Nusawave Forecast \u00A9{datetime.now().year}",
+            f"Monsun Forecast \u00A9{datetime.now().year}",
             transform=ax.transAxes,
             fontsize=chrome["credit_size"],
             ha="right",

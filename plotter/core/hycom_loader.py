@@ -26,7 +26,7 @@ NCSS_ICE_BEST = (
 # Covers all configured plot regions (southeast_asia bbox).
 HYCOM_BBOX = (90.0, 150.0, -20.0, 25.0)  # west, east, south, north
 
-CACHE_DIR = Path(tempfile.gettempdir()) / "nusawave_hycom_cache"
+CACHE_DIR = Path(tempfile.gettempdir()) / "monsun_hycom_cache"
 
 # NCSS occasionally accepts a connection and then stalls forever (the failure
 # mode that burned the first 3-hourly production run). Bound each attempt and

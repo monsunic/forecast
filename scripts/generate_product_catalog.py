@@ -50,7 +50,7 @@ def scan_deployed_assets():
 def format_colormap(var_cfg):
     palette = var_cfg.get("palette")
     if palette:
-        return f"`{palette}` (Nusawave)"
+        return f"`{palette}` (Monsun)"
     cmap = var_cfg.get("cmap")
     if isinstance(cmap, list):
         return f"custom discrete ({len(cmap)} colors)"
@@ -181,7 +181,7 @@ def render_markdown(yaml_cfg, deployed):
             "|--------|----------------|----------|",
             "| **Discrete shaded** | `contourf` or `pcolormesh` + `ListedColormap` + `BoundaryNorm` | All filled scalar products |",
             "| **Line contour** | `contour` + `clabel` | MSLP isobars (no fill) |",
-            "| **Filled anomaly** | `contourf` + Nusawave diverging palette | SSH |",
+            "| **Filled anomaly** | `contourf` + Monsun diverging palette | SSH |",
             "| **Vector overlay** | `quiver` or `barbs` | Wind/wave direction, sea current |",
             "",
             "### Colorbar and legend",
@@ -253,7 +253,7 @@ def render_markdown(yaml_cfg, deployed):
 
     lines.extend(
         [
-            "## Nusawave colormap palettes",
+            "## Monsun colormap palettes",
             "",
             "All shaded products use discrete palettes in "
             "[`plotter/core/colormaps.py`](../plotter/core/colormaps.py), "

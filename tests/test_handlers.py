@@ -148,7 +148,7 @@ def test_wind_handler_converts_ms_to_knots():
             "color": "black",
         },
         windbarb={},
-        palette="nusawave_wind",
+        palette="monsun_wind",
         levels=[0, 10, 20, 30],
         extend="max",
     )

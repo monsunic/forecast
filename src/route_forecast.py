@@ -42,7 +42,7 @@ VESSEL_PROFILES = ROOT / "plotter" / "data" / "vessel_profiles.json"
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="NusaWave Route Forecast extractor")
+    parser = argparse.ArgumentParser(description="Monsun Route Forecast extractor")
     parser.add_argument("--gfs-cycle", required=True, help="YYYYMMDDHH for GFS wave/atmos")
     parser.add_argument(
         "--hycom-cycle",

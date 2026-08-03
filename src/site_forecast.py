@@ -80,7 +80,7 @@ def attach_astronomical_tide(doc: dict, constituents: dict | None = None) -> boo
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="NusaWave Site Forecast extractor")
+    parser = argparse.ArgumentParser(description="Monsun Site Forecast extractor")
     parser.add_argument("--gfs-cycle", required=True, help="YYYYMMDDHH for GFS wave/atmos")
     parser.add_argument(
         "--hycom-cycle",
@@ -396,7 +396,7 @@ def render_site_charts(doc: dict, outfile: Path) -> None:
         0.01,
         0.005,
         (
-            f"Nusawave Forecast  |  {cycle_bits}  |  {doc.get('generated_at', '')}  |  "
+            f"Monsun Forecast  |  {cycle_bits}  |  {doc.get('generated_at', '')}  |  "
             "Arrows = wind/wave propagation & current flow; tide = astronomical hourly (no surge)"
         ),
         fontsize=7,

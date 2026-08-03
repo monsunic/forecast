@@ -199,7 +199,7 @@ def test_seacurrent_handler_scales_to_cms():
             "color": "black",
         },
         windbarb={},
-        palette="nusawave_current",
+        palette="monsun_current",
         levels=[0, 50, 100, 200],
         extend="max",
     )

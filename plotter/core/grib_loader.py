@@ -18,7 +18,7 @@ NOMADS_GFSATMOS_FILTER = (
 # Covers all configured plot regions (southeast_asia bbox).
 GFSATMOS_BBOX = (90.0, 150.0, -20.0, 25.0)  # leftlon, rightlon, bottomlat, toplat
 
-CACHE_DIR = Path(tempfile.gettempdir()) / "nusawave_grib_cache"
+CACHE_DIR = Path(tempfile.gettempdir()) / "monsun_grib_cache"
 
 
 def gfswave_grib_url(cycle: str, forecast_hour: int) -> str:

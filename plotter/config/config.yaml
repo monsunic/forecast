@@ -504,7 +504,7 @@ variables:
     var2display: "Rainfall Rate"
     unit: "mm/hr"
     cbrlabel: "Rainfall Rate"
-    palette: nusawave_rain
+    palette: monsun_rain
     levels: [0, 0.5, 1, 2, 3, 5, 7, 10, 12, 15, 20]
     extend: max
 
@@ -541,7 +541,7 @@ variables:
     var2display: "Rainfall Rate and 700 hPa Humidity"
     unit: "mm/hr"
     cbrlabel: "Rainfall Rate"
-    palette: nusawave_rain
+    palette: monsun_rain
     levels: [0, 0.5, 1, 2, 3, 5, 7, 10, 12, 15, 20]
     extend: max
     # Dry intrusions (dashed) through the moist envelope (solid).
@@ -556,7 +556,7 @@ variables:
     var2display: "Surface Air Temperature"
     unit: "degC"
     cbrlabel: "Surface Air Temperature"
-    palette: nusawave_temp
+    palette: monsun_temp
     levels: [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36]
     extend: both
     contour:
@@ -569,7 +569,7 @@ variables:
     var2display: "Surface Relative Humidity"
     unit: "%"
     cbrlabel: "Surface Relative Humidity"
-    palette: nusawave_rh
+    palette: monsun_rh
     levels: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     contour:
       linewidth: 0.4
@@ -585,7 +585,7 @@ variables:
     scale: 1.943844492440496
     cbrlabel: "Surface Wind Speed and Direction"
     arrlabel: "Wind Direction"
-    palette: nusawave_wind
+    palette: monsun_wind
     levels: [0, 2, 4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 50, 60]
     extend: max
   
@@ -594,7 +594,7 @@ variables:
     unit: "meter"
     cbrlabel: "Significant Wave Height and Direction"
     arrlabel: "Wave Direction"
-    palette: nusawave_wave
+    palette: monsun_wave
     levels: [0, 0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7]
     extend: max
 
@@ -603,7 +603,7 @@ variables:
     unit: "meter"
     cbrlabel: "Primary Swell Height and Direction"
     arrlabel: "Swell Direction"
-    palette: nusawave_swell
+    palette: monsun_swell
     levels: [0, 0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7]
     extend: max
 
@@ -614,7 +614,7 @@ variables:
     scale: 100.0
     cbrlabel: "Surface Sea Current"
     arrlabel: "Current Direction"
-    palette: nusawave_current
+    palette: monsun_current
     levels: [0, 5, 10, 20, 30, 45, 60, 80, 100, 150, 200, 300, 400]
     extend: max
 
@@ -622,7 +622,7 @@ variables:
     var2display: "Surface Sea Temperature"
     unit: "degC"
     cbrlabel: "Surface Sea Temperature"
-    palette: nusawave_sst
+    palette: monsun_sst
     levels: [16, 18, 20, 22, 24, 26, 26.5, 27, 27.5, 28, 28.5, 29, 29.5, 30, 30.5, 31, 31.5, 32, 34, 36]
     extend: both
     contour:
@@ -635,7 +635,7 @@ variables:
     var2display: "Surface Sea Salinity"
     unit: "PSU"
     cbrlabel: "Surface Sea Salinity"
-    palette: nusawave_salinity
+    palette: monsun_salinity
     levels: [30, 30.5, 31, 31.5, 32, 32.5, 33, 33.5, 34, 34.5, 35, 35.5, 36]
     extend: both
     contour:
@@ -649,6 +649,6 @@ variables:
     var2display: "Sea Surface Height"
     unit: "meter"
     cbrlabel: "Sea Surface Height"
-    palette: nusawave_ssh
+    palette: monsun_ssh
     levels: [-2, -1.75, -1.5, -1.25, -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
     extend: both

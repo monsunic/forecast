@@ -1,7 +1,7 @@
 import pytest
 
 from plotter.core.colormaps import (
-    NUSAWAVE_PALETTES,
+    MONSUN_PALETTES,
     build_cmap_norm,
     colorbar_ticks,
     resolve_palette,
@@ -10,22 +10,22 @@ from plotter.core.config_loader import apply_product_config
 from plotter.core.plot_config import PlotConfig
 
 
-@pytest.mark.parametrize("palette_key", sorted(NUSAWAVE_PALETTES))
+@pytest.mark.parametrize("palette_key", sorted(MONSUN_PALETTES))
 def test_palette_has_colors(palette_key):
-    colors = NUSAWAVE_PALETTES[palette_key]
+    colors = MONSUN_PALETTES[palette_key]
     assert len(colors) >= 8
     assert all(c.startswith("#") and len(c) in (4, 7) for c in colors)
 
 
 def test_resolve_palette_from_config():
-    cfg = PlotConfig(palette="nusawave_wind")
+    cfg = PlotConfig(palette="monsun_wind")
     colors = resolve_palette(cfg)
-    assert colors == NUSAWAVE_PALETTES["nusawave_wind"]
+    assert colors == MONSUN_PALETTES["monsun_wind"]
 
 
 def test_build_cmap_norm_bins():
     cfg = PlotConfig(
-        palette="nusawave_temp",
+        palette="monsun_temp",
         levels=[20, 22, 24, 26, 28, 30, 32, 34, 35],
         extend="both",
     )
@@ -36,7 +36,7 @@ def test_build_cmap_norm_bins():
 
 def test_build_cmap_norm_extend_max():
     cfg = PlotConfig(
-        palette="nusawave_wind",
+        palette="monsun_wind",
         levels=[0, 2, 4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 50, 60],
         extend="max",
     )
@@ -64,16 +64,16 @@ def test_colorbar_ticks_keeps_even_stride():
 @pytest.mark.parametrize(
     "slug,palette",
     [
-        ("wind", "nusawave_wind"),
-        ("swh", "nusawave_wave"),
-        ("swell", "nusawave_swell"),
-        ("rainrate", "nusawave_rain"),
-        ("temp", "nusawave_temp"),
-        ("relhum", "nusawave_rh"),
-        ("seatemp", "nusawave_sst"),
-        ("seasalt", "nusawave_salinity"),
-        ("ssh", "nusawave_ssh"),
-        ("seacurrent", "nusawave_current"),
+        ("wind", "monsun_wind"),
+        ("swh", "monsun_wave"),
+        ("swell", "monsun_swell"),
+        ("rainrate", "monsun_rain"),
+        ("temp", "monsun_temp"),
+        ("relhum", "monsun_rh"),
+        ("seatemp", "monsun_sst"),
+        ("seasalt", "monsun_salinity"),
+        ("ssh", "monsun_ssh"),
+        ("seacurrent", "monsun_current"),
     ],
 )
 def test_product_palette_wiring(slug, palette):

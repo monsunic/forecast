@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Extract per-port tidal harmonics from a global atlas into a compact JSON table.
 
-Preferred model is FES2022 (AVISO atlas via ``NW_TIDE_DIRECTORY`` / pyTMD cache).
+Preferred model is FES2022 (AVISO atlas via ``MS_TIDE_DIRECTORY`` / pyTMD cache).
 When FES is not installed, GOT4.10 can be fetched publicly and used as a bootstrap
 so Site Forecast still ships working astronomical-tide charts.
 
@@ -11,7 +11,7 @@ Examples::
     python scripts/extract_tide_constituents.py --model GOT4.10 --fetch
 
     # Production FES2022 once the atlas is registered/downloaded
-    NW_TIDE_DIRECTORY=/data/tides python scripts/extract_tide_constituents.py \\
+    MS_TIDE_DIRECTORY=/data/tides python scripts/extract_tide_constituents.py \\
         --model FES2022_extrapolated
 """
 
@@ -38,13 +38,13 @@ def parse_args():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument(
         "--model",
-        default=os.environ.get("NW_TIDE_MODEL", "FES2022_extrapolated"),
-        help="pyTMD model name (default: FES2022_extrapolated, or NW_TIDE_MODEL)",
+        default=os.environ.get("MS_TIDE_MODEL", "FES2022_extrapolated"),
+        help="pyTMD model name (default: FES2022_extrapolated, or MS_TIDE_MODEL)",
     )
     p.add_argument(
         "--directory",
-        default=os.environ.get("NW_TIDE_DIRECTORY") or None,
-        help="Tide atlas root (default: pyTMD cache / NW_TIDE_DIRECTORY)",
+        default=os.environ.get("MS_TIDE_DIRECTORY") or None,
+        help="Tide atlas root (default: pyTMD cache / MS_TIDE_DIRECTORY)",
     )
     p.add_argument(
         "--fetch",
@@ -117,7 +117,7 @@ def main():
         raise SystemExit(
             f"[ERROR] Tide model '{args.model}' not found under {directory}.\n"
             f"  For GOT bootstrap: add --fetch\n"
-            f"  For FES2022: download the AVISO atlas and set NW_TIDE_DIRECTORY\n"
+            f"  For FES2022: download the AVISO atlas and set MS_TIDE_DIRECTORY\n"
             f"  Detail: {exc}"
         ) from exc
 

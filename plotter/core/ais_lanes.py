@@ -29,7 +29,7 @@ HF_API = f"https://huggingface.co/api/datasets/{HF_DATASET}"
 HF_FILE = f"https://huggingface.co/datasets/{HF_DATASET}/resolve/main/"
 
 CACHE_DIR = Path(
-    os.environ.get("NW_AIS_CACHE")
+    os.environ.get("MS_AIS_CACHE")
     or Path(__file__).resolve().parents[2] / ".ais-cache"
 )
 
