@@ -118,7 +118,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Atmosphere": {
           "parameters": {
@@ -262,7 +262,7 @@
             "F072"
           ],
           "dataset": "gfsatmos",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Ocean": {
           "parameters": {
@@ -331,7 +331,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080621"
+          "cycle": "2026080702"
         }
       }
     },
@@ -452,7 +452,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Atmosphere": {
           "parameters": {
@@ -596,7 +596,7 @@
             "F072"
           ],
           "dataset": "gfsatmos",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Ocean": {
           "parameters": {
@@ -665,7 +665,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080621"
+          "cycle": "2026080702"
         }
       }
     },
@@ -786,7 +786,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Atmosphere": {
           "parameters": {
@@ -930,7 +930,7 @@
             "F072"
           ],
           "dataset": "gfsatmos",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Ocean": {
           "parameters": {
@@ -999,7 +999,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080621"
+          "cycle": "2026080702"
         }
       }
     },
@@ -1120,7 +1120,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Atmosphere": {
           "parameters": {
@@ -1264,7 +1264,7 @@
             "F072"
           ],
           "dataset": "gfsatmos",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Ocean": {
           "parameters": {
@@ -1333,7 +1333,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080621"
+          "cycle": "2026080702"
         }
       }
     },
@@ -1454,7 +1454,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Atmosphere": {
           "parameters": {
@@ -1598,7 +1598,7 @@
             "F072"
           ],
           "dataset": "gfsatmos",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Ocean": {
           "parameters": {
@@ -1667,7 +1667,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080621"
+          "cycle": "2026080702"
         }
       }
     },
@@ -1788,7 +1788,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Atmosphere": {
           "parameters": {
@@ -1932,7 +1932,7 @@
             "F072"
           ],
           "dataset": "gfsatmos",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Ocean": {
           "parameters": {
@@ -2001,7 +2001,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080621"
+          "cycle": "2026080702"
         }
       }
     },
@@ -2122,7 +2122,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Atmosphere": {
           "parameters": {
@@ -2266,7 +2266,7 @@
             "F072"
           ],
           "dataset": "gfsatmos",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Ocean": {
           "parameters": {
@@ -2335,7 +2335,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080621"
+          "cycle": "2026080702"
         }
       }
     },
@@ -2456,7 +2456,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Atmosphere": {
           "parameters": {
@@ -2600,7 +2600,7 @@
             "F072"
           ],
           "dataset": "gfsatmos",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Ocean": {
           "parameters": {
@@ -2669,7 +2669,7 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080621"
+          "cycle": "2026080702"
         }
       }
     },
@@ -2790,7 +2790,7 @@
             "F072"
           ],
           "dataset": "gfswave",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Atmosphere": {
           "parameters": {
@@ -2934,7 +2934,7 @@
             "F072"
           ],
           "dataset": "gfsatmos",
-          "cycle": "2026080718"
+          "cycle": "2026080800"
         },
         "Ocean": {
           "parameters": {
@@ -3003,17 +3003,17 @@
             "F072"
           ],
           "dataset": "hycom",
-          "cycle": "2026080621"
+          "cycle": "2026080702"
         }
       }
     }
   },
-  "cycle": "2026080718",
-  "updated": "2026080718",
+  "cycle": "2026080800",
+  "updated": "2026080800",
   "cycles": {
-    "gfswave": "2026080718",
-    "gfsatmos": "2026080718",
-    "hycom": "2026080621"
+    "gfswave": "2026080800",
+    "gfsatmos": "2026080800",
+    "hycom": "2026080702"
   },
   "sites": [
     {
@@ -3023,11 +3023,11 @@
       "lon": 106.6833,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-08T04:32:20Z",
+      "generated_at": "2026-08-08T09:32:34Z",
       "cycles": {
-        "gfswave": "2026080718",
-        "gfsatmos": "2026080718",
-        "hycom": "2026080621",
+        "gfswave": "2026080800",
+        "gfsatmos": "2026080800",
+        "hycom": "2026080702",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3065,11 +3065,11 @@
       "lon": 106.7075,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-08T04:32:20Z",
+      "generated_at": "2026-08-08T09:32:34Z",
       "cycles": {
-        "gfswave": "2026080718",
-        "gfsatmos": "2026080718",
-        "hycom": "2026080621",
+        "gfswave": "2026080800",
+        "gfsatmos": "2026080800",
+        "hycom": "2026080702",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3107,11 +3107,11 @@
       "lon": 100.8833,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-08T04:32:20Z",
+      "generated_at": "2026-08-08T09:32:34Z",
       "cycles": {
-        "gfswave": "2026080718",
-        "gfsatmos": "2026080718",
-        "hycom": "2026080621",
+        "gfswave": "2026080800",
+        "gfsatmos": "2026080800",
+        "hycom": "2026080702",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3149,11 +3149,11 @@
       "lon": 120.9544,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-08T04:32:20Z",
+      "generated_at": "2026-08-08T09:32:34Z",
       "cycles": {
-        "gfswave": "2026080718",
-        "gfsatmos": "2026080718",
-        "hycom": "2026080621",
+        "gfswave": "2026080800",
+        "gfsatmos": "2026080800",
+        "hycom": "2026080702",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3191,11 +3191,11 @@
       "lon": 101.3929,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-08T04:32:20Z",
+      "generated_at": "2026-08-08T09:32:34Z",
       "cycles": {
-        "gfswave": "2026080718",
-        "gfsatmos": "2026080718",
-        "hycom": "2026080621",
+        "gfswave": "2026080800",
+        "gfsatmos": "2026080800",
+        "hycom": "2026080702",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3233,11 +3233,11 @@
       "lon": 103.82,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-08T04:32:20Z",
+      "generated_at": "2026-08-08T09:32:34Z",
       "cycles": {
-        "gfswave": "2026080718",
-        "gfsatmos": "2026080718",
-        "hycom": "2026080621",
+        "gfswave": "2026080800",
+        "gfsatmos": "2026080800",
+        "hycom": "2026080702",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3275,11 +3275,11 @@
       "lon": 112.7228,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-08T04:32:20Z",
+      "generated_at": "2026-08-08T09:32:34Z",
       "cycles": {
-        "gfswave": "2026080718",
-        "gfsatmos": "2026080718",
-        "hycom": "2026080621",
+        "gfswave": "2026080800",
+        "gfsatmos": "2026080800",
+        "hycom": "2026080702",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3317,11 +3317,11 @@
       "lon": 106.8865,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-08-08T04:32:20Z",
+      "generated_at": "2026-08-08T09:32:34Z",
       "cycles": {
-        "gfswave": "2026080718",
-        "gfsatmos": "2026080718",
-        "hycom": "2026080621",
+        "gfswave": "2026080800",
+        "gfsatmos": "2026080800",
+        "hycom": "2026080702",
         "tide": "GOT4.10"
       },
       "hours": [
@@ -3354,10 +3354,10 @@
     }
   ],
   "route": {
-    "generated_at": "2026-08-08T04:32:55Z",
+    "generated_at": "2026-08-08T09:33:08Z",
     "cycles": {
-      "gfswave": "2026080718",
-      "hycom": "2026080621"
+      "gfswave": "2026080800",
+      "hycom": "2026080702"
     },
     "lane_source": "grid",
     "grid_cells": 3315,
@@ -3368,7 +3368,7 @@
     "hours_last": "F072"
   },
   "status": {
-    "generated_at": "2026-08-08T04:32:56Z",
+    "generated_at": "2026-08-08T09:33:08Z",
     "forecast": {
       "max_hours": 72,
       "hour_step": 3
@@ -3388,10 +3388,10 @@
         "id": "route_forecast",
         "label": "Route Forecast",
         "state": "operational",
-        "generated_at": "2026-08-08T04:32:55Z",
+        "generated_at": "2026-08-08T09:33:08Z",
         "cycles": {
-          "gfswave": "2026080718",
-          "hycom": "2026080621"
+          "gfswave": "2026080800",
+          "hycom": "2026080702"
         },
         "lane_source": "grid",
         "grid_cells": 3315,
@@ -3406,7 +3406,7 @@
       "gfswave": {
         "label": "GFS Wave",
         "source": "GFS Wave 0.25deg",
-        "cycle": "2026080718",
+        "cycle": "2026080800",
         "products": [
           "wind",
           "swh",
@@ -3421,7 +3421,7 @@
       "gfsatmos": {
         "label": "GFS Atmosphere",
         "source": "GFS 0.25deg",
-        "cycle": "2026080718",
+        "cycle": "2026080800",
         "products": [
           "temp",
           "relhum",
@@ -3437,7 +3437,7 @@
       "hycom": {
         "label": "HYCOM Ocean",
         "source": "HYCOM ESPC-D-V02",
-        "cycle": "2026080621",
+        "cycle": "2026080702",
         "products": [
           "seatemp",
           "seasalt",
