@@ -3023,7 +3023,7 @@
       "lon": 106.6833,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-09-01T18:26:05Z",
+      "generated_at": "2026-09-01T22:57:53Z",
       "cycles": {
         "gfswave": "2026090112",
         "gfsatmos": "2026090112",
@@ -3065,7 +3065,7 @@
       "lon": 106.7075,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-09-01T18:26:05Z",
+      "generated_at": "2026-09-01T22:57:53Z",
       "cycles": {
         "gfswave": "2026090112",
         "gfsatmos": "2026090112",
@@ -3107,7 +3107,7 @@
       "lon": 100.8833,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-09-01T18:26:05Z",
+      "generated_at": "2026-09-01T22:57:53Z",
       "cycles": {
         "gfswave": "2026090112",
         "gfsatmos": "2026090112",
@@ -3149,7 +3149,7 @@
       "lon": 120.9544,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-09-01T18:26:05Z",
+      "generated_at": "2026-09-01T22:57:53Z",
       "cycles": {
         "gfswave": "2026090112",
         "gfsatmos": "2026090112",
@@ -3191,7 +3191,7 @@
       "lon": 101.3929,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-09-01T18:26:05Z",
+      "generated_at": "2026-09-01T22:57:53Z",
       "cycles": {
         "gfswave": "2026090112",
         "gfsatmos": "2026090112",
@@ -3233,7 +3233,7 @@
       "lon": 103.82,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-09-01T18:26:05Z",
+      "generated_at": "2026-09-01T22:57:53Z",
       "cycles": {
         "gfswave": "2026090112",
         "gfsatmos": "2026090112",
@@ -3275,7 +3275,7 @@
       "lon": 112.7228,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-09-01T18:26:05Z",
+      "generated_at": "2026-09-01T22:57:53Z",
       "cycles": {
         "gfswave": "2026090112",
         "gfsatmos": "2026090112",
@@ -3317,7 +3317,7 @@
       "lon": 106.8865,
       "has_data": true,
       "has_chart": true,
-      "generated_at": "2026-09-01T18:26:05Z",
+      "generated_at": "2026-09-01T22:57:53Z",
       "cycles": {
         "gfswave": "2026090112",
         "gfsatmos": "2026090112",
@@ -3354,7 +3354,7 @@
     }
   ],
   "route": {
-    "generated_at": "2026-09-01T18:26:38Z",
+    "generated_at": "2026-09-01T22:58:27Z",
     "cycles": {
       "gfswave": "2026090112"
     },
@@ -3367,7 +3367,7 @@
     "hours_last": "F072"
   },
   "status": {
-    "generated_at": "2026-09-01T18:26:38Z",
+    "generated_at": "2026-09-01T22:58:27Z",
     "forecast": {
       "max_hours": 72,
       "hour_step": 3
@@ -3387,7 +3387,7 @@
         "id": "route_forecast",
         "label": "Route Forecast",
         "state": "operational",
-        "generated_at": "2026-09-01T18:26:38Z",
+        "generated_at": "2026-09-01T22:58:27Z",
         "cycles": {
           "gfswave": "2026090112"
         },
